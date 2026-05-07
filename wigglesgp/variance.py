@@ -30,3 +30,21 @@ def corrected_per_k_variance(ratios):
 
     alpha = (N_sim - 3) / (N_sim - 2)
     return var_hat / alpha
+
+
+def smooth_log_variance(k, variance, degree=3):
+    k = np.asarray(k, dtype=float)
+    variance = np.asarray(variance, dtype=float)
+
+    mask = np.isfinite(k) & np.isfinite(variance) & (k > 0) & (variance > 0)
+
+    if np.count_nonzero(mask) < degree:
+        raise ValueError("Not enough positive finite variance points to smooth.")
+    
+    coeff = np.polyfit(np.log(k[mask]), np.log(variance[mask]), degree)
+
+    smoothed = np.empty_like(variance)
+    smoothed[:] = np.nan
+    smoothed[mask] = np.exp(np.polyval(coeff, np.log(k[mask])))
+
+    return smoothed

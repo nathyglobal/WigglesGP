@@ -6,7 +6,7 @@ import yaml
 
 from .fitting import fit_damping_scale, sigma_errors_delta_chi2
 from .io_utils import read_power_ratio_snapshot
-from .variance import corrected_per_k_variance
+from .variance import corrected_per_k_variance, smooth_log_variance
 
 def load_simulation_config(path):
     """
@@ -118,7 +118,8 @@ def fit_sigma_table_from_config(config_path, write=True):
                 "Signal ratios and variance ratios must have the same number of k-bins"
             )
 
-        variance = corrected_per_k_variance(variance_ratios)
+        variance_raw = corrected_per_k_variance(variance_ratios)
+        variance = smooth_log_variance(k_var, variance_raw, degree=3)
 
         # print("\nDEBUG")
         # print(f"z={z}, omega={omega_model}, omega_label={omega_label}")
@@ -163,6 +164,7 @@ def fit_sigma_table_from_config(config_path, write=True):
                 "omega": omega_label,
                 "omega_model": omega_model,
                 "sigma": fit["sigma"],
+                "variance_model": "log_poly3",
                 "sigma_err": dsym,
                 "sigma_err_plus": dpos,
                 "sigma_err_minus": dneg,
