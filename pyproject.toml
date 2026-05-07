@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wigglesgp"
+version = "0.1.0"
+description = "Gaussian-process modelling of non-linear primordial wiggles"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pyyaml",
+    "scikit-learn",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wigglesgp*"]

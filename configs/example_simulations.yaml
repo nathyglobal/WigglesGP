@@ -1,0 +1,36 @@
+feature_type: log
+
+simulation:
+  box_size: 1024.0
+  k_min: 0.05
+  k_max: 0.6
+  h: 0.67
+
+feature_defaults:
+  amplitude: 0.03
+  phase: 0.0
+  k_pivot: 0.05
+  phase_free: false
+
+datasets:
+  - z: 0.0
+    omega: 1.26
+
+    signal_pairs:
+      - wiggle: /path/to/signal_seed1/Features/power.txt
+        vanilla: /path/to/signal_seed1/Standard/power.txt
+      - wiggle: /path/to/signal_seed2/Features/power.txt
+        vanilla: /path/to/signal_seed2/Standard/power.txt
+
+    variance_pairs:
+      - wiggle: /path/to/variance_seed1/Features/power.txt
+        vanilla: /path/to/variance_seed1/Standard/power.txt
+      - wiggle: /path/to/variance_seed2/Features/power.txt
+        vanilla: /path/to/variance_seed2/Standard/power.txt
+      - wiggle: /path/to/variance_seed3/Features/power.txt
+        vanilla: /path/to/variance_seed3/Standard/power.txt
+      - wiggle: /path/to/variance_seed4/Features/power.txt
+        vanilla: /path/to/variance_seed4/Standard/power.txt
+
+output:
+  sigma_table: training_data/log_sigma_fits.csv

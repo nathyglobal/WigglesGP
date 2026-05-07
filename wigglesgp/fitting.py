@@ -39,6 +39,8 @@ def damping_fit_residuals(
         sigma = fit_params[0]
         phase = phase_fixed
 
+    y = np.asarray(y, dtype=float)
+
     model = damped_wiggle_ratio(
         k,
         omega,
@@ -49,12 +51,12 @@ def damping_fit_residuals(
         k_pivot=k_pivot,
         h=h,
     )
-    residual = model - np.asarray(y, dtype=float)
+    residual = model - y
 
-    if std is None:
-        return residual
+    if std is not None:
+        residual =  residual / _safe_std(std)
     
-    return residual / _safe_std(std)
+    return np.ravel(residual)
 
 
 def weighted_chi2(
@@ -183,7 +185,7 @@ def fit_damping_scale(
     residual = model - y
 
     return{
-        "results": result,
+        "result": result,
         "sigma": sigma_hat,
         "phase": phase_hat,
         "std": std,
@@ -366,5 +368,5 @@ def sigma_errors_delta_chi2(
         dsym = 0.5 * (dpos + dneg)
     else:
         dsym = np.nan
-        
+
     return dpos, dneg, dsym

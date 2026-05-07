@@ -20,7 +20,7 @@ def _slice_to_k_range(k, values, k_min=None, k_max=None):
     else:
         end = np.abs(k - k_max).argmin()
     
-    return values[start:end], k[start:end]
+    return k[start:end], values[start:end]
 
 def read_primordial_power(name, delimiter=None, box_size=1024):
     """
@@ -31,7 +31,7 @@ def read_primordial_power(name, delimiter=None, box_size=1024):
     data = np.loadtxt(name, delimiter=delimiter)
     k = data[:, 0] * (2 * np.pi / box_size)
     power = data[:, 1]
-    return power, k
+    return k, power
 
 
 def read_initial_power(name, delimiter=None, k_min=0.05, k_max=0.6):
@@ -61,7 +61,7 @@ def read_power_ratio_snapshot(
         P_wiggle(k) / P_vanilla(k).
     """
     wiggle = np.loadtxt(wiggle_path)
-    vanilla= np.loaddtxt(vanilla_path)
+    vanilla= np.loadtxt(vanilla_path)
 
     if wiggle.shape[0] != vanilla.shape[0]:
         raise ValueError(
@@ -71,5 +71,4 @@ def read_power_ratio_snapshot(
     k = wiggle[:, 0] * (2 * np.pi / box_size)
     ratio = wiggle[:, 1] / vanilla[:, 1]
 
-    ratio, k = _slice_to_k_range(k, ratio, k_min, k_max)
-    return ratio, k
+    return _slice_to_k_range(k, ratio, k_min, k_max)

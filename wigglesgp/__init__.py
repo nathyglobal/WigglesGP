@@ -1,6 +1,6 @@
 from .damping import(
     damped_log_wiggle_ratio,
-    damped_log_wiggle_ratio,
+    damped_linear_wiggle_ratio,
     damped_wiggle_ratio
 )
 

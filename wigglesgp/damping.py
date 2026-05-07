@@ -39,7 +39,7 @@ def damped_log_wiggle_ratio(
     """
     k = np.asarray(k, dtype=float)
     damping = np.exp(-0.5 * (h * k * sigma) **2)
-    wiggle = np.exp(omega * np.log(h * k  / k_pivot) + phase)
+    wiggle = np.cos(omega * np.log(h * k  / k_pivot) + phase)
     return 1.0 + amplitude * wiggle * damping
 
 
@@ -60,7 +60,7 @@ def damped_linear_wiggle_ratio(
     """
     k = np.asarray(k, dtype=float)
     damping = np.exp(-0.5 * (h * k * sigma) **2)
-    wiggle = np.exp(omega * h * k  / k_pivot + phase)
+    wiggle = np.cos(omega * h * k  / k_pivot + phase)
     return 1.0 + amplitude * wiggle * damping
 
 

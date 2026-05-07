@@ -1,0 +1,434 @@
+feature_type: log
+simulation:
+  box_size: 1024.0
+  k_min: 0.05
+  k_max: 0.6
+  h: 0.67
+feature_defaults:
+  amplitude: 0.03
+  phase: 0.0
+  k_pivot: 0.05
+  phase_free: false
+datasets:
+- z: 5.0
+  omega: 0.8
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotP_000
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotNP_000
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_000
+- z: 4.0
+  omega: 0.8
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotP_001
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotNP_001
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_001
+- z: 3.0
+  omega: 0.8
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotP_002
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotNP_002
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_002
+- z: 2.0
+  omega: 0.8
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotP_003
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotNP_003
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_003
+- z: 1.0
+  omega: 0.8
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotP_004
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotNP_004
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_004
+- z: 0.0
+  omega: 0.8
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotP_005
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.8/PK-DM-A_003_logF_0.8snapshotNP_005
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_005
+- z: 5.0
+  omega: 0.87
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotP_000
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotNP_000
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_000
+- z: 4.0
+  omega: 0.87
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotP_001
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotNP_001
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_001
+- z: 3.0
+  omega: 0.87
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotP_002
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotNP_002
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_002
+- z: 2.0
+  omega: 0.87
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotP_003
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotNP_003
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_003
+- z: 1.0
+  omega: 0.87
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotP_004
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotNP_004
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_004
+- z: 0.0
+  omega: 0.87
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotP_005
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log0.87/PK-DM-A_003_logF_0.87snapshotNP_005
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_005
+- z: 5.0
+  omega: 1.26
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotP_000
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotNP_000
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_000
+- z: 4.0
+  omega: 1.26
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotP_001
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotNP_001
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_001
+- z: 3.0
+  omega: 1.26
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotP_002
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotNP_002
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_002
+- z: 2.0
+  omega: 1.26
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotP_003
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotNP_003
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_003
+- z: 1.0
+  omega: 1.26
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotP_004
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotNP_004
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_004
+- z: 0.0
+  omega: 1.26
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotP_005
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.26/PK-DM-A_003_logF_1.26snapshotNP_005
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_005
+- z: 5.0
+  omega: 1.5
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotP_000
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotNP_000
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_000
+- z: 4.0
+  omega: 1.5
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotP_001
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotNP_001
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_001
+- z: 3.0
+  omega: 1.5
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotP_002
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotNP_002
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_002
+- z: 2.0
+  omega: 1.5
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotP_003
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotNP_003
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_003
+- z: 1.0
+  omega: 1.5
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotP_004
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotNP_004
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_004
+- z: 0.0
+  omega: 1.5
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotP_005
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log1.5/PK-DM-A_003_logF_1.5snapshotNP_005
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_005
+- z: 5.0
+  omega: 2.0
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotP_000
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotNP_000
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_000
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_000
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_000
+- z: 4.0
+  omega: 2.0
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotP_001
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotNP_001
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_001
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_001
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_001
+- z: 3.0
+  omega: 2.0
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotP_002
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotNP_002
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_002
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_002
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_002
+- z: 2.0
+  omega: 2.0
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotP_003
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotNP_003
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_003
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_003
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_003
+- z: 1.0
+  omega: 2.0
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotP_004
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotNP_004
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_004
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_004
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_004
+- z: 0.0
+  omega: 2.0
+  signal_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotP_005
+    vanilla: /Volumes/NAS/Research Backup/Data/DataV2/Log2.0/PK-DM-A_003_logF_2.0snapshotNP_005
+  variance_pairs:
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-1_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-1_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-2_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-2_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-3_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-3_N1024_L1024_NP_005
+  - wiggle: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_1-4_N1024_L1024_P_005
+    vanilla: /Volumes/NAS/Research Backup/Data/Variance Data/PK-DM-Set1_2-4_N1024_L1024_NP_005
+output:
+  sigma_table: training_data/log_sigma_fits.csv
