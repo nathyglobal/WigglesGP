@@ -28,7 +28,7 @@ def nonlinear_wiggle_power(
     """
     Construct the damped non-linear wiggle matter power spectrum.
 
-    P_model = P_van_nl * (1 + D * (P_wig_lin / P_van_lin) / P_van_lin)
+    P_model = P_van_nl * (1 + D * (P_wig_lin - P_van_lin) / P_van_lin)
 
     where D is the calibrated damping envelope.
     """

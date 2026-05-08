@@ -3,3 +3,4 @@ wigglesgp/analysis.py
 /wigglesgp.egg-info
 .DS_Store
 /wigglesgp/__pycache__
+/forecast_tests
