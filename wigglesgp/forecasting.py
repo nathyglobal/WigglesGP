@@ -2,12 +2,7 @@ import numpy as np
 
 from .damping import damped_wiggle_ratio
 from .power import nonlinear_wiggle_power
-from .camb_power import (
-    get_vanilla_and_wiggle_spectra,
-    get_wiggle_linear_spectrum,
-    get_wiggle_linear_spectra_redshifts,
-    build_vanilla_spectra_cache,
-)
+from .camb_power import get_wiggle_linear_spectra_redshifts
 
 
 
@@ -242,7 +237,7 @@ def emulator_damped_power_from_spectra(
         "sigma": sigma,
     }
 
-def emulator_damped_camb_data_vector_cached(
+def emulator_damped_camb_data_vector(
     *,
     emulator,
     vanilla_cache,
@@ -309,172 +304,6 @@ def emulator_damped_camb_data_vector_cached(
             check_domain=check_domain,
         )
 
-        blocks.append(block)
-
-    if observable not in {"ratio_nl", "p_wig_nl"}:
-        raise ValueError("observable must be either 'ratio_nl' or 'p_wig_nl'.")
-
-    vector = np.concatenate([block[observable] for block in blocks])
-    k = np.concatenate([block["k"] for block in blocks])
-    z = np.concatenate(
-        [np.full_like(block["k"], block["z"], dtype=float) for block in blocks]
-    )
-
-    return {
-        "vector": vector,
-        "k": k,
-        "z": z,
-        "blocks": blocks,
-        "observable": observable,
-    }
-
-
-def emulator_damped_camb_power(
-    *,
-    emulator,
-    redshift,
-    log10omega,
-    A_feat,
-    phi,
-    feature_type="log",
-    kmax=0.8,
-    npoints=700,
-    k_fit_min=0.05,
-    k_fit_max=0.6,
-    check_domain=True,
-    cosmology=None,
-    camb_options=None,
-    warn_amplitude=True,
-):
-    """
-    Generate an emulator-damped non-linear feature spectrum from CAMB outputs.
-
-    The model is
-
-        P_wig,nl(k,z) = P_van,nl(k,z)
-            * [1 + D(k,z,omega) * (P_wig,lin/P_van,lin - 1)]
-
-    where D is supplied by the Sigma emulator.
-
-    Phase is passed through the CAMB primordial feature model. The Sigma
-    emulator does not depend on phase, consistent with the calibrated phase
-    sweeps.
-    """
-    if warn_amplitude:
-        warn_if_uncalibrated_amplitude(A_feat)
-
-
-    spectra = get_vanilla_and_wiggle_spectra(
-        redshift=redshift,
-        log10omega_feat=log10omega,
-        A_feat=A_feat,
-        phi=phi,
-        feature_type=feature_type,
-        kmax=kmax,
-        npoints=npoints,
-        cosmology=cosmology,
-        camb_options=camb_options,
-    )
-
-    k = np.asarray(spectra["k"], dtype=float)
-    mask = (k >= k_fit_min) & (k <= k_fit_max)
-
-    if not np.any(mask):
-        raise ValueError(
-            f"No CAMB k values inside requested range "
-            f"[{k_fit_min}, {k_fit_max}]."
-        )
-
-    k = k[mask]
-    p_van_lin = np.asarray(spectra["p_van_lin"], dtype=float)[mask]
-    p_van_nl = np.asarray(spectra["p_van_nl"], dtype=float)[mask]
-    p_wig_lin = np.asarray(spectra["p_wig_lin"], dtype=float)[mask]
-
-    z_grid = np.full_like(k, float(redshift), dtype=float)
-    omega_grid = np.full_like(k, float(log10omega), dtype=float)
-
-    damping, sigma = emulator.damping(
-        k,
-        z_grid,
-        omega_grid,
-        return_sigma=True,
-        check_domain=check_domain,
-    )
-
-    p_wig_nl = nonlinear_wiggle_power(
-        p_van_lin=p_van_lin,
-        p_van_nl=p_van_nl,
-        p_wig_lin=p_wig_lin,
-        damping=damping,
-    )
-
-    ratio_lin = p_wig_lin / p_van_lin
-    ratio_nl = p_wig_nl / p_van_nl
-
-    return {
-        "z": float(redshift),
-        "log10omega": float(log10omega),
-        "A_feat": float(A_feat),
-        "phi": float(phi),
-        "k": k,
-        "p_van_lin": p_van_lin,
-        "p_van_nl": p_van_nl,
-        "p_wig_lin": p_wig_lin,
-        "p_wig_nl": p_wig_nl,
-        "ratio_lin": ratio_lin,
-        "ratio_nl": ratio_nl,
-        "damping": damping,
-        "sigma": sigma,
-    }
-
-
-def emulator_damped_camb_data_vector(
-    *,
-    emulator,
-    redshifts,
-    log10omega,
-    A_feat,
-    phi,
-    feature_type="log",
-    kmax=0.8,
-    npoints=700,
-    k_fit_min=0.05,
-    k_fit_max=0.6,
-    check_domain=True,
-    cosmology=None,
-    camb_options=None,
-    observable="ratio_nl",
-):
-    """
-    Build a stacked forecast data vector over multiple redshifts.
-
-    Parameters
-    ----------
-    observable : {"ratio_nl", "p_wig_nl"}
-        Quantity used as the forecast data vector.
-    """
-
-    warn_if_uncalibrated_amplitude(A_feat)
-
-    blocks = []
-
-    for redshift in redshifts:
-        block = emulator_damped_camb_power(
-            emulator=emulator,
-            redshift=redshift,
-            log10omega=log10omega,
-            A_feat=A_feat,
-            phi=phi,
-            feature_type=feature_type,
-            kmax=kmax,
-            npoints=npoints,
-            k_fit_min=k_fit_min,
-            k_fit_max=k_fit_max,
-            check_domain=check_domain,
-            cosmology=cosmology,
-            camb_options=camb_options,
-            warn_amplitude=False,
-        )
         blocks.append(block)
 
     if observable not in {"ratio_nl", "p_wig_nl"}:

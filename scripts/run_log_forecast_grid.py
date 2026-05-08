@@ -10,7 +10,7 @@ import numpy as np
 from wigglesgp.emulator import SigmaEmulator
 from wigglesgp.camb_power import build_vanilla_spectra_cache
 from wigglesgp.forecasting import (
-    emulator_damped_camb_data_vector_cached,
+    emulator_damped_camb_data_vector,
     diagonal_fractional_sigma,
     gaussian_loglike_diagonal,
 )
@@ -278,7 +278,7 @@ def main():
     print("\nBuilding fiducial data vector")
     print("-----------------------------")
 
-    fid = emulator_damped_camb_data_vector_cached(
+    fid = emulator_damped_camb_data_vector(
         emulator=emulator,
         vanilla_cache=vanilla_cache,
         redshifts=args.redshifts,
@@ -314,7 +314,7 @@ def main():
     ):
         t0 = time.time()
 
-        model = emulator_damped_camb_data_vector_cached(
+        model = emulator_damped_camb_data_vector(
             emulator=emulator,
             vanilla_cache=vanilla_cache,
             redshifts=args.redshifts,
