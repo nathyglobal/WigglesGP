@@ -2,7 +2,12 @@ import numpy as np
 
 from .damping import damped_wiggle_ratio
 from .power import nonlinear_wiggle_power
-from .camb_power import get_vanilla_and_wiggle_spectra
+from .camb_power import (
+    get_vanilla_and_wiggle_spectra,
+    get_wiggle_linear_spectrum,
+    get_wiggle_linear_spectra_redshifts,
+    build_vanilla_spectra_cache,
+)
 
 
 
@@ -159,6 +164,169 @@ def apply_damped_feature_to_pk(
         return pk_feature, ratio
 
     return pk_feature
+
+
+def emulator_damped_power_from_spectra(
+    *,
+    emulator,
+    redshift,
+    log10omega,
+    A_feat,
+    phi,
+    k,
+    p_van_lin,
+    p_van_nl,
+    p_wig_lin,
+    k_fit_min=0.05,
+    k_fit_max=0.6,
+    check_domain=True,
+):
+    """
+    Apply the Sigma-emulator damping correction to already-generated CAMB spectra.
+
+    This is the cached forecast path. The vanilla spectra can be reused across
+    all feature-parameter evaluations at fixed cosmology.
+    """
+    k = np.asarray(k, dtype=float)
+    p_van_lin = np.asarray(p_van_lin, dtype=float)
+    p_van_nl = np.asarray(p_van_nl, dtype=float)
+    p_wig_lin = np.asarray(p_wig_lin, dtype=float)
+
+    mask = (k >= k_fit_min) & (k <= k_fit_max)
+
+    if not np.any(mask):
+        raise ValueError(
+            f"No CAMB k values inside requested range "
+            f"[{k_fit_min}, {k_fit_max}]."
+        )
+
+    k = k[mask]
+    p_van_lin = p_van_lin[mask]
+    p_van_nl = p_van_nl[mask]
+    p_wig_lin = p_wig_lin[mask]
+
+    z_grid = np.full_like(k, float(redshift), dtype=float)
+    omega_grid = np.full_like(k, float(log10omega), dtype=float)
+
+    damping, sigma = emulator.damping(
+        k,
+        z_grid,
+        omega_grid,
+        return_sigma=True,
+        check_domain=check_domain,
+    )
+
+    p_wig_nl = nonlinear_wiggle_power(
+        p_van_lin=p_van_lin,
+        p_van_nl=p_van_nl,
+        p_wig_lin=p_wig_lin,
+        damping=damping,
+    )
+
+    ratio_lin = p_wig_lin / p_van_lin
+    ratio_nl = p_wig_nl / p_van_nl
+
+    return {
+        "z": float(redshift),
+        "log10omega": float(log10omega),
+        "A_feat": float(A_feat),
+        "phi": float(phi),
+        "k": k,
+        "p_van_lin": p_van_lin,
+        "p_van_nl": p_van_nl,
+        "p_wig_lin": p_wig_lin,
+        "p_wig_nl": p_wig_nl,
+        "ratio_lin": ratio_lin,
+        "ratio_nl": ratio_nl,
+        "damping": damping,
+        "sigma": sigma,
+    }
+
+def emulator_damped_camb_data_vector_cached(
+    *,
+    emulator,
+    vanilla_cache,
+    redshifts,
+    log10omega,
+    A_feat,
+    phi,
+    feature_type="log",
+    kmax=0.8,
+    npoints=700,
+    k_fit_min=0.05,
+    k_fit_max=0.6,
+    check_domain=True,
+    cosmology=None,
+    camb_options=None,
+    observable="ratio_nl",
+):
+    """
+    Build a stacked forecast data vector using cached vanilla spectra and a
+    single multi-redshift CAMB call for the wiggle linear spectra.
+    """
+    warn_if_uncalibrated_amplitude(A_feat)
+
+    redshifts = [float(z) for z in redshifts]
+
+    wiggle_cache = get_wiggle_linear_spectra_redshifts(
+        redshifts=redshifts,
+        log10omega_feat=log10omega,
+        A_feat=A_feat,
+        phi=phi,
+        feature_type=feature_type,
+        kmax=kmax,
+        npoints=npoints,
+        cosmology=cosmology,
+        camb_options=camb_options,
+    )
+
+    blocks = []
+
+    for redshift in redshifts:
+        if redshift not in vanilla_cache:
+            raise KeyError(f"No vanilla spectra cached for redshift {redshift}.")
+
+        vanilla = vanilla_cache[redshift]
+        wiggle = wiggle_cache[redshift]
+
+        if not np.allclose(vanilla["k"], wiggle["k"], rtol=0.0, atol=0.0):
+            raise ValueError(
+                f"Vanilla and wiggle CAMB k-grids differ at z={redshift}."
+            )
+
+        block = emulator_damped_power_from_spectra(
+            emulator=emulator,
+            redshift=redshift,
+            log10omega=log10omega,
+            A_feat=A_feat,
+            phi=phi,
+            k=vanilla["k"],
+            p_van_lin=vanilla["p_van_lin"],
+            p_van_nl=vanilla["p_van_nl"],
+            p_wig_lin=wiggle["p_wig_lin"],
+            k_fit_min=k_fit_min,
+            k_fit_max=k_fit_max,
+            check_domain=check_domain,
+        )
+
+        blocks.append(block)
+
+    if observable not in {"ratio_nl", "p_wig_nl"}:
+        raise ValueError("observable must be either 'ratio_nl' or 'p_wig_nl'.")
+
+    vector = np.concatenate([block[observable] for block in blocks])
+    k = np.concatenate([block["k"] for block in blocks])
+    z = np.concatenate(
+        [np.full_like(block["k"], block["z"], dtype=float) for block in blocks]
+    )
+
+    return {
+        "vector": vector,
+        "k": k,
+        "z": z,
+        "blocks": blocks,
+        "observable": observable,
+    }
 
 
 def emulator_damped_camb_power(
