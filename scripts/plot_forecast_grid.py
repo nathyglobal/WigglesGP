@@ -8,44 +8,67 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
 
 
+DEFAULTS = {
+    "log": {
+        "input": Path("forecast_tests/log_forecast_grid_local_getdist_Afixed_101x101_gp_model.csv"),
+        "output": Path("forecast_tests/log_forecast_grid_slices.pdf"),
+        "fixed_omega": 1.26,
+        "fixed_phi": np.pi,
+    },
+    "linear": {
+        "input": Path("forecast_tests/linear_forecast_grid_local_getdist_Afixed_101x101_gp_model.csv"),
+        "output": Path("forecast_tests/linear_forecast_grid_slices.pdf"),
+        "fixed_omega": 0.87,
+        "fixed_phi": np.pi,
+    },
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Plot forecast likelihood grid slices."
     )
 
     parser.add_argument(
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature template. Used only to set sensible default paths/labels.",
+    )
+
+    parser.add_argument(
         "--input",
         type=Path,
-        default=Path("forecast_tests/log_forecast_grid.csv"),
-        help="Input forecast grid CSV.",
+        default=None,
+        help="Input forecast grid CSV. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("forecast_tests/log_forecast_grid_slices.pdf"),
-        help="Output PDF path.",
+        default=None,
+        help="Output PDF path. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--fixed-A",
         type=float,
         default=0.03,
-        help="A value used for the log10omega-phi slice.",
+        help="A value used for the omega-phi slice.",
     )
 
     parser.add_argument(
-        "--fixed-log10omega",
+        "--fixed-omega",
         type=float,
-        default=1.26,
-        help="log10omega value used for the A-phi slice.",
+        default=None,
+        help="Omega-label value used for the A-phi slice. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--fixed-phi",
         type=float,
-        default=0.0,
-        help="phi value used for the A-log10omega slice.",
+        default=None,
+        help="Phi value used for the A-omega slice. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -70,6 +93,17 @@ def parse_args():
     )
 
     return parser.parse_args()
+
+
+def resolve_defaults(args):
+    defaults = DEFAULTS[args.feature_type]
+
+    input_path = args.input or defaults["input"]
+    output_path = args.output or defaults["output"]
+    fixed_omega = args.fixed_omega if args.fixed_omega is not None else defaults["fixed_omega"]
+    fixed_phi = args.fixed_phi if args.fixed_phi is not None else defaults["fixed_phi"]
+
+    return input_path, output_path, fixed_omega, fixed_phi
 
 
 def set_latex_style():
@@ -106,9 +140,7 @@ def nearest_value(values, target):
 def make_slice(data, fixed_name, fixed_value):
     values = data[fixed_name]
     actual = nearest_value(values, fixed_value)
-
     mask = np.isclose(values, actual, rtol=0.0, atol=1e-12)
-
     return data[mask], actual
 
 
@@ -135,6 +167,8 @@ def plot_tricontour(ax, x, y, z, xlabel, ylabel, title, vmax=None, levels=40):
         )
         return None
 
+    z = z - np.nanmin(z)
+
     if vmax is not None:
         z_plot = np.minimum(z, vmax)
         level_values = np.linspace(np.nanmin(z_plot), vmax, levels)
@@ -150,7 +184,6 @@ def plot_tricontour(ax, x, y, z, xlabel, ylabel, title, vmax=None, levels=40):
         levels=level_values,
     )
 
-    # Useful reference contours for Gaussian-style confidence regions.
     for level in [2.30, 6.18, 11.83]:
         if np.nanmin(z) <= level <= np.nanmax(z):
             ax.tricontour(
@@ -179,9 +212,11 @@ def plot_tricontour(ax, x, y, z, xlabel, ylabel, title, vmax=None, levels=40):
 
 def main():
     args = parse_args()
+    input_path, output_path, fixed_omega, fixed_phi = resolve_defaults(args)
+
     set_latex_style()
 
-    data = load_grid(args.input)
+    data = load_grid(input_path)
 
     A_unique = np.unique(data["A_feat"])
     omega_unique = np.unique(data["log10omega"])
@@ -189,7 +224,6 @@ def main():
 
     panels = []
 
-    # Panel 1: log10omega-phi at fixed A
     if len(omega_unique) > 1 and len(phi_unique) > 1:
         sl, actual_A = make_slice(data, "A_feat", args.fixed_A)
         panels.append(
@@ -197,29 +231,27 @@ def main():
                 "data": sl,
                 "x": "log10omega",
                 "y": "phi",
-                "xlabel": r"$\log_{10}\omega$",
+                "xlabel": r"$\omega_{\rm label}$",
                 "ylabel": r"$\phi$",
                 "title": rf"$A_{{\rm feat}}={actual_A:g}$",
             }
         )
 
-    # Panel 2: A-log10omega at fixed phi
     if len(A_unique) > 1 and len(omega_unique) > 1:
-        sl, actual_phi = make_slice(data, "phi", args.fixed_phi)
+        sl, actual_phi = make_slice(data, "phi", fixed_phi)
         panels.append(
             {
                 "data": sl,
                 "x": "log10omega",
                 "y": "A_feat",
-                "xlabel": r"$\log_{10}\omega$",
+                "xlabel": r"$\omega_{\rm label}$",
                 "ylabel": r"$A_{\rm feat}$",
                 "title": rf"$\phi={actual_phi:g}$",
             }
         )
 
-    # Panel 3: A-phi at fixed log10omega
     if len(A_unique) > 1 and len(phi_unique) > 1:
-        sl, actual_omega = make_slice(data, "log10omega", args.fixed_log10omega)
+        sl, actual_omega = make_slice(data, "log10omega", fixed_omega)
         panels.append(
             {
                 "data": sl,
@@ -227,7 +259,7 @@ def main():
                 "y": "A_feat",
                 "xlabel": r"$\phi$",
                 "ylabel": r"$A_{\rm feat}$",
-                "title": rf"$\log_{{10}}\omega={actual_omega:g}$",
+                "title": rf"$\omega_{{\rm label}}={actual_omega:g}$",
             }
         )
 
@@ -247,7 +279,6 @@ def main():
     )
 
     axes = axes[0]
-
     images = []
 
     for ax, panel in zip(axes, panels):
@@ -286,11 +317,11 @@ def main():
         wspace=0.30,
     )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(args.output, dpi=args.dpi, bbox_inches="tight")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=args.dpi, bbox_inches="tight")
     plt.close(fig)
 
-    print(f"Wrote: {args.output}")
+    print(f"Wrote: {output_path}")
 
 
 if __name__ == "__main__":

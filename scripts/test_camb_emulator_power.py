@@ -10,6 +10,20 @@ from wigglesgp.power import nonlinear_wiggle_power
 from wigglesgp.camb_power import get_vanilla_and_wiggle_spectra
 
 
+DEFAULTS = {
+    "log": {
+        "emulator": Path("emulators/log_sigma_gp.pkl"),
+        "omega": 1.26,
+        "output": Path("forecast_tests/log_camb_emulator_power_z1_w126.csv"),
+    },
+    "linear": {
+        "emulator": Path("emulators/linear_sigma_gp.pkl"),
+        "omega": 0.87,
+        "output": Path("forecast_tests/linear_camb_emulator_power_z1_w087.csv"),
+    },
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
@@ -19,17 +33,17 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--emulator",
-        type=Path,
-        default=Path("emulators/log_sigma_gp.pkl"),
-        help="Path to saved Sigma emulator.",
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature template.",
     )
 
     parser.add_argument(
-        "--feature-type",
-        choices=["log", "linear"],
-        default="log",
-        help="Feature template.",
+        "--emulator",
+        type=Path,
+        default=None,
+        help="Path to saved Sigma emulator. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -42,10 +56,10 @@ def parse_args():
     parser.add_argument(
         "--log10omega",
         type=float,
-        default=1.26,
+        default=None,
         help=(
             "Feature frequency label in the emulator convention. "
-            "This is log10(omega), not omega."
+            "Defaults from --feature-type."
         ),
     )
 
@@ -94,8 +108,8 @@ def parse_args():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("forecast_tests/log_camb_emulator_power_z1_w126.csv"),
-        help="CSV output path.",
+        default=None,
+        help="CSV output path. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -105,6 +119,16 @@ def parse_args():
     )
 
     return parser.parse_args()
+
+
+def resolve_defaults(args):
+    defaults = DEFAULTS[args.feature_type]
+
+    emulator_path = args.emulator or defaults["emulator"]
+    log10omega = args.log10omega if args.log10omega is not None else defaults["omega"]
+    output = args.output or defaults["output"]
+
+    return emulator_path, log10omega, output
 
 
 def write_output_csv(path, data):
@@ -142,13 +166,18 @@ def write_output_csv(path, data):
 
 def main():
     args = parse_args()
+    emulator_path, log10omega, output_path = resolve_defaults(args)
+
+    if not emulator_path.exists():
+        raise FileNotFoundError(f"Emulator file does not exist: {emulator_path}")
+
     check_domain = not args.no_domain_check
 
-    emulator = SigmaEmulator.from_file(args.emulator)
+    emulator = SigmaEmulator.from_file(emulator_path)
 
     spectra = get_vanilla_and_wiggle_spectra(
         redshift=args.z,
-        log10omega_feat=args.log10omega,
+        log10omega_feat=log10omega,
         A_feat=args.A_feat,
         phi=args.phi,
         feature_type=args.feature_type,
@@ -163,13 +192,19 @@ def main():
 
     mask = (k >= args.k_fit_min) & (k <= args.k_fit_max)
 
+    if not np.any(mask):
+        raise ValueError(
+            f"No CAMB k values inside requested fit range "
+            f"[{args.k_fit_min}, {args.k_fit_max}]."
+        )
+
     k_fit = k[mask]
     p_van_lin_fit = p_van_lin[mask]
     p_van_nl_fit = p_van_nl[mask]
     p_wig_lin_fit = p_wig_lin[mask]
 
     z_grid = np.full_like(k_fit, args.z, dtype=float)
-    omega_grid = np.full_like(k_fit, args.log10omega, dtype=float)
+    omega_grid = np.full_like(k_fit, log10omega, dtype=float)
 
     damping, sigma = emulator.damping(
         k_fit,
@@ -201,22 +236,22 @@ def main():
         "ratio_nl": ratio_nl,
     }
 
-    write_output_csv(args.output, output_data)
+    write_output_csv(output_path, output_data)
 
     print("\nCAMB + Sigma-emulator forecast test")
     print("-----------------------------------")
-    print(f"emulator:       {args.emulator}")
+    print(f"emulator:       {emulator_path}")
     print(f"feature_type:   {args.feature_type}")
     print(f"z:              {args.z}")
-    print(f"log10omega:     {args.log10omega}")
-    print(f"omega:          {10.0 ** args.log10omega:.6g}")
+    print(f"omega_label:    {log10omega}")
+    print(f"omega_model:    {10.0 ** log10omega:.6g}")
     print(f"A_feat:         {args.A_feat}")
     print(f"phi:            {args.phi}")
     print(f"CAMB kmax:      {args.kmax}")
     print(f"CAMB npoints:   {args.npoints}")
     print(f"fit k range:    {args.k_fit_min} -> {args.k_fit_max}")
     print(f"n fit points:   {len(k_fit)}")
-    print(f"output:         {args.output}")
+    print(f"output:         {output_path}")
 
     print("\nSigma and damping")
     print("-----------------")

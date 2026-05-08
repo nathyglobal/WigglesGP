@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
+import argparse
 
 import numpy as np
 import yaml
@@ -6,75 +9,144 @@ import yaml
 from wigglesgp.simulations import fit_sigma_table_from_config
 from wigglesgp.emulator import SigmaEmulator
 
+# Import shared config-generation helper from scripts directory.
+try:
+    from write_simulation_config import (
+        FEATURE_SPECS,
+        build_simulation_config,
+        check_paths_exist as check_config_paths_exist,
+    )
+except ImportError:
+    # Allows running from repo root with PYTHONPATH=.
+    import sys
 
-def write_log_config(path):
-    data_root = Path("/Volumes/NAS/Research Backup/Data/DataV2")
-    variance_root = Path("/Volumes/NAS/Research Backup/Data/Variance Data")
+    scripts_dir = Path(__file__).resolve().parent
+    sys.path.insert(0, str(scripts_dir))
 
-    omegas = ["0.8", "0.87", "1.26", "1.5", "2.0"]
-    snapshots = ["000", "001", "002", "003", "004", "005"]
+    from write_simulation_config import (
+        FEATURE_SPECS,
+        build_simulation_config,
+        check_paths_exist as check_config_paths_exist,
+    )
 
-    config = {
-        "feature_type": "log",
-        "simulation": {
-            "box_size": 1024.0,
-            "k_min": 0.05,
-            "k_max": 0.6,
-            "h": 0.67,
-        },
-        "feature_defaults": {
-            "amplitude": 0.03,
-            "phase": 0.0,
-            "k_pivot": 0.05,
-            "phase_free": False,
-        },
-        "datasets": [],
-        "output": {
-            "sigma_table": "training_data/log_sigma_fits.csv",
-        },
-    }
 
-    for omega in omegas:
-        omega_dir = data_root / f"Log{omega}"
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Fit Sigma values from simulation config, train a Sigma emulator, "
+            "save it, reload it, and run simple sanity checks."
+        )
+    )
 
-        for snap in snapshots:
-            z = 5.0 - float(int(snap))
+    parser.add_argument(
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature template to fit and train.",
+    )
 
-            signal_pairs = [
-                {
-                    "wiggle": str(
-                        omega_dir / f"PK-DM-A_003_logF_{omega}snapshotP_{snap}"
-                    ),
-                    "vanilla": str(
-                        omega_dir / f"PK-DM-A_003_logF_{omega}snapshotNP_{snap}"
-                    ),
-                }
-            ]
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help=(
+            "Existing simulation YAML config. If omitted, a config is generated "
+            "using scripts/write_simulation_config.py defaults."
+        ),
+    )
 
-            variance_pairs = []
-            for seed in [1, 2, 3, 4]:
-                variance_pairs.append(
-                    {
-                        "wiggle": str(
-                            variance_root
-                            / f"PK-DM-Set1_1-{seed}_N1024_L1024_P_{snap}"
-                        ),
-                        "vanilla": str(
-                            variance_root
-                            / f"PK-DM-Set1_2-{seed}_N1024_L1024_NP_{snap}"
-                        ),
-                    }
-                )
+    parser.add_argument(
+        "--write-config",
+        action="store_true",
+        help="Write/update the generated config before fitting.",
+    )
 
-            config["datasets"].append(
-                {
-                    "z": z,
-                    "omega": float(omega),
-                    "signal_pairs": signal_pairs,
-                    "variance_pairs": variance_pairs,
-                }
-            )
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=Path("/Volumes/NAS/Research Backup/Data/DataV2"),
+        help="Root directory containing Log*/Lin* simulation folders.",
+    )
 
+    parser.add_argument(
+        "--variance-root",
+        type=Path,
+        default=Path("/Volumes/NAS/Research Backup/Data/Variance Data"),
+        help="Root directory containing variance simulation files.",
+    )
+
+    parser.add_argument(
+        "--sigma-table",
+        type=Path,
+        default=None,
+        help="Output sigma-fit CSV table. Defaults by feature type.",
+    )
+
+    parser.add_argument(
+        "--emulator-output",
+        type=Path,
+        default=None,
+        help="Output emulator pickle. Defaults to emulators/<feature>_sigma_gp.pkl.",
+    )
+
+    parser.add_argument(
+        "--normalise-y",
+        action="store_true",
+        default=True,
+        help="Normalise GP target values before training.",
+    )
+
+    parser.add_argument(
+        "--no-normalise-y",
+        action="store_false",
+        dest="normalise_y",
+        help="Disable GP target normalisation.",
+    )
+
+    parser.add_argument(
+        "--n-restarts-optimizer",
+        type=int,
+        default=10,
+        help="Number of GP hyperparameter optimiser restarts.",
+    )
+
+    parser.add_argument(
+        "--h",
+        type=float,
+        default=0.67,
+        help="Dimensionless Hubble parameter used by the damping emulator.",
+    )
+
+    parser.add_argument(
+        "--check-paths",
+        action="store_true",
+        default=True,
+        help="Check all YAML file paths exist before fitting.",
+    )
+
+    parser.add_argument(
+        "--no-check-paths",
+        action="store_false",
+        dest="check_paths",
+        help="Skip path existence checks.",
+    )
+
+    return parser.parse_args()
+
+
+def default_config_path(feature_type):
+    return Path(FEATURE_SPECS[feature_type]["config_path"])
+
+
+def default_sigma_table(feature_type):
+    return Path(FEATURE_SPECS[feature_type]["sigma_table"])
+
+
+def default_emulator_path(feature_type):
+    return Path("emulators") / f"{feature_type}_sigma_gp.pkl"
+
+
+def write_config(path, config):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -84,27 +156,30 @@ def write_log_config(path):
     return path
 
 
-def check_paths_exist(config_path):
-    with open(config_path, "r") as handle:
-        config = yaml.safe_load(handle)
+def load_config(path):
+    with open(path, "r") as handle:
+        return yaml.safe_load(handle)
 
-    missing = []
 
-    for dataset in config["datasets"]:
-        for group in ["signal_pairs", "variance_pairs"]:
-            for pair in dataset[group]:
-                for key in ["wiggle", "vanilla"]:
-                    path = Path(pair[key])
-                    if not path.exists():
-                        missing.append(str(path))
+def get_or_write_config(args):
+    config_path = args.config or default_config_path(args.feature_type)
+    sigma_table = args.sigma_table or default_sigma_table(args.feature_type)
 
-    if missing:
-        print(f"Missing {len(missing)} files. First few:")
-        for path in missing[:10]:
-            print(f"  {path}")
-        raise FileNotFoundError("Some files in the generated YAML do not exist.")
+    if args.write_config or not config_path.exists():
+        config = build_simulation_config(
+            feature_type=args.feature_type,
+            data_root=args.data_root,
+            variance_root=args.variance_root,
+            sigma_table=sigma_table,
+        )
 
-    print("All YAML file paths exist.")
+        write_config(config_path, config)
+        print(f"Wrote config: {config_path}")
+    else:
+        config = load_config(config_path)
+        print(f"Using existing config: {config_path}")
+
+    return config_path, config
 
 
 def print_fit_summary(rows):
@@ -114,48 +189,54 @@ def print_fit_summary(rows):
     for row in rows:
         print(
             f"z={row['z']:.1f}, "
-            f"omega={row['omega']:.2f}, "
+            f"omega={row['omega']:.3g}, "
             f"sigma={row['sigma']:.6g}, "
             f"sigma_err={row['sigma_err']:.6g}, "
             f"chi2_red={row['chi2_red']:.6g}"
         )
 
 
-def main():
-    config_path = write_log_config("configs/log_simulations.yaml")
-    print(f"Wrote config: {config_path}")
-
-    check_paths_exist(config_path)
-
-    rows = fit_sigma_table_from_config(config_path, write=True)
-    print_fit_summary(rows)
-
-    sigma_table = "training_data/log_sigma_fits.csv"
-
-    emulator = SigmaEmulator.from_sigma_table(
-        sigma_table,
-        feature_type="log",
-        normalise_y=True,
-        n_restarts_optimizer=10,
-        h=0.67,
-    )
-
+def print_metadata(emulator):
     print("\nTrained GP metadata")
     print("-------------------")
+
     for key, value in emulator.metadata.items():
         print(f"{key}: {value}")
 
-    emulator_path = Path("emulators/log_sigma_gp.pkl")
-    emulator_path.parent.mkdir(parents=True, exist_ok=True)
-    emulator.to_file(emulator_path)
-    print(f"\nSaved emulator: {emulator_path}")
 
-    loaded = SigmaEmulator.from_file(emulator_path)
+def prediction_test_points(emulator):
+    metadata = emulator.metadata
 
-    z_test = np.array([0.0, 1.0, 2.5, 5.0])
-    omega_test = np.array([0.8, 1.0, 1.5, 2.0])
+    z_min = float(metadata.get("z_min", 0.0))
+    z_max = float(metadata.get("z_max", 5.0))
+    omega_min = float(metadata.get("omega_min", 0.0))
+    omega_max = float(metadata.get("omega_max", 1.0))
 
-    sigma_mean, sigma_std = loaded.predict_sigma(
+    z_test = np.array(
+        [
+            z_min,
+            0.5 * (z_min + z_max),
+            z_max,
+        ],
+        dtype=float,
+    )
+
+    omega_test = np.array(
+        [
+            omega_min,
+            0.5 * (omega_min + omega_max),
+            omega_max,
+        ],
+        dtype=float,
+    )
+
+    return z_test, omega_test
+
+
+def run_loaded_emulator_checks(emulator):
+    z_test, omega_test = prediction_test_points(emulator)
+
+    sigma_mean, sigma_std = emulator.predict_sigma(
         z_test,
         omega_test,
         return_std=True,
@@ -165,25 +246,62 @@ def main():
     print("--------------------")
     for z, omega, mean, std in zip(z_test, omega_test, sigma_mean, sigma_std):
         print(
-            f"z={z:.2f}, omega={omega:.2f}: "
+            f"z={z:.2f}, omega={omega:.3g}: "
             f"sigma={mean:.6g} ± {std:.6g}"
         )
 
     k_test = np.linspace(0.05, 0.6, 8)
-    z_grid = np.full_like(k_test, 1.0)
-    omega_grid = np.full_like(k_test, 1.26)
 
-    damping, sigma = loaded.damping(
+    z_mid = np.full_like(k_test, z_test[len(z_test) // 2])
+    omega_mid = np.full_like(k_test, omega_test[len(omega_test) // 2])
+
+    damping, sigma = emulator.damping(
         k_test,
-        z_grid,
-        omega_grid,
+        z_mid,
+        omega_mid,
         return_sigma=True,
     )
 
-    print("\nDamping prediction at z=1, omega=1.26")
+    print(
+        f"\nDamping prediction at z={z_mid[0]:.3g}, "
+        f"omega={omega_mid[0]:.3g}"
+    )
     print("-------------------------------------")
     for k, sig, damp in zip(k_test, sigma, damping):
         print(f"k={k:.4f}, sigma={sig:.6g}, D={damp:.6g}")
+
+
+def main():
+    args = parse_args()
+
+    config_path, config = get_or_write_config(args)
+
+    if args.check_paths:
+        check_config_paths_exist(config)
+
+    rows = fit_sigma_table_from_config(config_path, write=True)
+    print_fit_summary(rows)
+
+    sigma_table = Path(config["output"]["sigma_table"])
+
+    emulator = SigmaEmulator.from_sigma_table(
+        sigma_table,
+        feature_type=args.feature_type,
+        normalise_y=args.normalise_y,
+        n_restarts_optimizer=args.n_restarts_optimizer,
+        h=args.h,
+    )
+
+    print_metadata(emulator)
+
+    emulator_path = args.emulator_output or default_emulator_path(args.feature_type)
+    emulator_path.parent.mkdir(parents=True, exist_ok=True)
+
+    emulator.to_file(emulator_path)
+    print(f"\nSaved emulator: {emulator_path}")
+
+    loaded = SigmaEmulator.from_file(emulator_path)
+    run_loaded_emulator_checks(loaded)
 
     print("\nDone.")
 

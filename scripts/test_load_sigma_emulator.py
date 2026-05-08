@@ -9,30 +9,42 @@ from wigglesgp.emulator import SigmaEmulator
 from wigglesgp.training import load_sigma_table
 
 
+DEFAULT_PATHS = {
+    "log": {
+        "emulator": Path("emulators/log_sigma_gp.pkl"),
+        "sigma_table": Path("training_data/log_sigma_fits.csv"),
+    },
+    "linear": {
+        "emulator": Path("emulators/linear_sigma_gp.pkl"),
+        "sigma_table": Path("training_data/linear_sigma_fits.csv"),
+    },
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Load a saved Sigma emulator and compare it to its training table."
     )
 
     parser.add_argument(
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature type to test.",
+    )
+
+    parser.add_argument(
         "--emulator",
         type=Path,
-        required=True,
-        help="Path to saved emulator pickle, e.g. emulators/log_sigma_gp.pkl",
+        default=None,
+        help="Path to saved emulator pickle. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--sigma-table",
         type=Path,
-        required=True,
-        help="Path to Sigma training table, e.g. training_data/log_sigma_fits.csv",
-    )
-
-    parser.add_argument(
-        "--feature-type",
-        choices=["log", "linear"],
-        default="log",
-        help="Feature type to load from the table.",
+        default=None,
+        help="Path to Sigma training table. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -42,6 +54,15 @@ def parse_args():
     )
 
     return parser.parse_args()
+
+
+def resolve_paths(args):
+    defaults = DEFAULT_PATHS[args.feature_type]
+
+    emulator_path = args.emulator or defaults["emulator"]
+    sigma_table = args.sigma_table or defaults["sigma_table"]
+
+    return emulator_path, sigma_table
 
 
 def print_metadata(emulator):
@@ -103,7 +124,7 @@ def compare_training_table(emulator, sigma_table, feature_type, check_domain=Tru
     for idx in order[:10]:
         print(
             f"z={z[idx]:4.1f}, "
-            f"omega_label={omega[idx]:5.2f}, "
+            f"omega_label={omega[idx]:6.3g}, "
             f"sigma_table={sigma_table_values[idx]:10.6g}, "
             f"sigma_gp={sigma_gp[idx]:10.6g}, "
             f"diff={diff[idx]:+10.4e}, "
@@ -135,7 +156,7 @@ def damping_sanity_check(emulator, z, omega, check_domain=True):
 
     print("\nDamping-envelope sanity check")
     print("-----------------------------")
-    print(f"using z={float(z):.1f}, omega_label={float(omega):.2f}")
+    print(f"using z={float(z):.1f}, omega_label={float(omega):.3g}")
     print(f"k min/max:       {np.min(k):.6g} / {np.max(k):.6g}")
     print(f"sigma min/max:   {np.min(sigma):.6g} / {np.max(sigma):.6g}")
     print(f"D min/max:       {np.min(damping):.6g} / {np.max(damping):.6g}")
@@ -149,20 +170,26 @@ def damping_sanity_check(emulator, z, omega, check_domain=True):
 def main():
     args = parse_args()
 
+    emulator_path, sigma_table = resolve_paths(args)
     check_domain = not args.no_domain_check
 
-    emulator = SigmaEmulator.from_file(args.emulator)
+    if not emulator_path.exists():
+        raise FileNotFoundError(f"Emulator file does not exist: {emulator_path}")
+
+    if not sigma_table.exists():
+        raise FileNotFoundError(f"Sigma table does not exist: {sigma_table}")
+
+    emulator = SigmaEmulator.from_file(emulator_path)
 
     print_metadata(emulator)
 
-    z, omega, sigma_table, sigma_gp, sigma_gp_std = compare_training_table(
+    z, omega, sigma_table_values, sigma_gp, sigma_gp_std = compare_training_table(
         emulator,
-        args.sigma_table,
+        sigma_table,
         args.feature_type,
         check_domain=check_domain,
     )
 
-    # Use a representative middle-ish training point for a simple damping test.
     idx = len(z) // 2
     damping_sanity_check(
         emulator,

@@ -6,6 +6,20 @@ import argparse
 import numpy as np
 
 
+DEFAULTS = {
+    "log": {
+        "input": Path("forecast_tests/log_forecast_grid_local_getdist_Afixed_101x101_gp_model.csv"),
+        "output": Path("forecast_tests/log_forecast_getdist_corner_101x101_gp_model.pdf"),
+        "title": "Log feature forecast",
+    },
+    "linear": {
+        "input": Path("forecast_tests/linear_forecast_grid_local_getdist_Afixed_101x101_gp_model.csv"),
+        "output": Path("forecast_tests/linear_forecast_getdist_corner_101x101_gp_model.pdf"),
+        "title": "Linear feature forecast",
+    },
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
@@ -15,17 +29,24 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature template. Used to set default input/output paths.",
+    )
+
+    parser.add_argument(
         "--input",
         type=Path,
-        default=Path("forecast_tests/log_forecast_grid_full_domain_Afixed.csv"),
-        help="Input forecast grid CSV.",
+        default=None,
+        help="Input forecast grid CSV. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("forecast_tests/log_forecast_getdist_corner.pdf"),
-        help="Output corner plot path.",
+        default=None,
+        help="Output corner plot path. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -60,10 +81,20 @@ def parse_args():
     parser.add_argument(
         "--title",
         default=None,
-        help="Optional plot title.",
+        help="Optional plot title. Defaults from --feature-type.",
     )
 
     return parser.parse_args()
+
+
+def resolve_defaults(args):
+    defaults = DEFAULTS[args.feature_type]
+
+    input_path = args.input or defaults["input"]
+    output_path = args.output or defaults["output"]
+    title = args.title if args.title is not None else defaults["title"]
+
+    return input_path, output_path, title
 
 
 def load_grid(path):
@@ -95,11 +126,18 @@ def phase_column(phi, phase_scale):
     raise ValueError(f"Unknown phase_scale={phase_scale!r}.")
 
 
-def make_getdist_samples(data, *, include_A=False, phase_scale="twopi", weight_floor=1e-300, thin_zero_weight=False):
+def make_getdist_samples(
+    data,
+    *,
+    include_A=False,
+    phase_scale="twopi",
+    weight_floor=1e-300,
+    thin_zero_weight=False,
+):
     from getdist import MCSamples
 
     A = np.asarray(data["A_feat"], dtype=float)
-    log10omega = np.asarray(data["log10omega"], dtype=float)
+    omega_label = np.asarray(data["log10omega"], dtype=float)
     phi_plot, phi_label = phase_column(data["phi"], phase_scale)
 
     delta_chi2 = np.asarray(data["delta_chi2"], dtype=float)
@@ -113,25 +151,63 @@ def make_getdist_samples(data, *, include_A=False, phase_scale="twopi", weight_f
         weights = np.maximum(weights, weight_floor)
         mask = np.isfinite(weights)
 
-    if include_A and len(np.unique(A)) > 1:
-        samples = np.column_stack([A[mask], log10omega[mask], phi_plot[mask]])
-        names = ["A_feat", "log10omega", "phi"]
-        labels = [r"A_{\rm feat}", r"\log_{10}\omega", phi_label]
-    else:
-        samples = np.column_stack([log10omega[mask], phi_plot[mask]])
-        names = ["log10omega", "phi"]
-        labels = [r"\log_{10}\omega", phi_label]
+    candidate_columns = []
+    candidate_names = []
+    candidate_labels = []
 
+    if include_A:
+        candidate_columns.append(A)
+        candidate_names.append("A_feat")
+        candidate_labels.append(r"A_{\rm feat}")
+
+    candidate_columns.append(omega_label)
+    candidate_names.append("omega_label")
+    candidate_labels.append(r"\omega_{\rm label}")
+
+    candidate_columns.append(phi_plot)
+    candidate_names.append("phi")
+    candidate_labels.append(phi_label)
+
+    columns = []
+    names = []
+    labels = []
+
+    for col, name, label in zip(candidate_columns, candidate_names, candidate_labels):
+        col_masked = np.asarray(col[mask], dtype=float)
+
+        if col_masked.size == 0:
+            continue
+
+        span = np.nanmax(col_masked) - np.nanmin(col_masked)
+
+        if not np.isfinite(span) or span <= 0.0:
+            print(f"Skipping constant parameter in GetDist plot: {name}")
+            continue
+
+        columns.append(col_masked)
+        names.append(name)
+        labels.append(label)
+
+    if len(columns) == 0:
+        raise ValueError("No varying parameters available for GetDist plot.")
+
+    samples = np.column_stack(columns)
     weights = weights[mask]
 
     if samples.shape[0] == 0:
         raise ValueError("No finite-weight samples survived.")
+
+    ranges = {
+        name: (float(np.nanmin(col)), float(np.nanmax(col)))
+        for name, col in zip(names, columns)
+    }
 
     gd_samples = MCSamples(
         samples=samples,
         weights=weights,
         names=names,
         labels=labels,
+        ranges=ranges,
         name_tag="Forecast",
     )
 
@@ -156,17 +232,19 @@ def print_summary(data):
     print(f"min delta_chi2:    {np.nanmin(delta):.6g}")
     print(f"max delta_chi2:    {np.nanmax(delta):.6g}")
     print(f"best A_feat:       {data['A_feat'][best]:.6g}")
-    print(f"best log10omega:   {data['log10omega'][best]:.6g}")
+    print(f"best omega_label:  {data['log10omega'][best]:.6g}")
+    print(f"best omega_model:  {10.0 ** data['log10omega'][best]:.6g}")
     print(f"best phi:          {data['phi'][best]:.6g}")
 
 
 def main():
     args = parse_args()
+    input_path, output_path, title = resolve_defaults(args)
 
     import matplotlib.pyplot as plt
     from getdist import plots
 
-    data = load_grid(args.input)
+    data = load_grid(input_path)
     print_summary(data)
 
     samples = make_getdist_samples(
@@ -177,7 +255,7 @@ def main():
         thin_zero_weight=args.thin_zero_weight,
     )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     g = plots.get_subplot_plotter(width_inch=7.0)
     g.settings.axes_fontsize = 12
@@ -185,21 +263,22 @@ def main():
     g.settings.legend_fontsize = 12
     g.settings.figure_legend_frame = False
 
-    params = samples.getParamNames().list()
+    params = [p.name for p in samples.getParamNames().names]
 
     g.triangle_plot(
         [samples],
         params,
         filled=True,
+        title_limit=1,
     )
 
-    if args.title is not None:
-        plt.suptitle(args.title, fontsize=14, y=0.98)
+    if title is not None:
+        plt.suptitle(title, fontsize=14, y=0.98)
 
-    plt.savefig(args.output, bbox_inches="tight")
+    plt.savefig(output_path, bbox_inches="tight")
     plt.close()
 
-    print(f"\nWrote: {args.output}")
+    print(f"\nWrote: {output_path}")
 
 
 if __name__ == "__main__":

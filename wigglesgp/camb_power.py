@@ -14,6 +14,31 @@ def primordial_pk_feature(
 ):
     """
     Primordial scalar power spectrum with optional oscillatory features.
+
+    Parameters
+    ----------
+    k : float or array-like
+        Wavenumber in Mpc^-1.
+    As : float
+        Scalar amplitude at k_pivot.
+    ns : float
+        Scalar spectral index.
+    A_feat : float
+        Feature amplitude.
+    log10omega_feat : float
+        Base-10 logarithm of the oscillation frequency. This is the same
+        convention used by the Sigma emulator training table.
+    phi : float
+        Phase in radians.
+    feature_type : {"log", "linear", "none"}
+        Feature template.
+    k_pivot : float
+        Pivot scale in Mpc^-1.
+
+    Returns
+    -------
+    pk : float or ndarray
+        Primordial scalar power spectrum.
     """
     k = np.asarray(k, dtype=np.float64)
     omega = 10.0 ** float(log10omega_feat)
@@ -82,6 +107,8 @@ def make_camb_params(
     import camb
     from camb import model
 
+    redshifts = [float(z) for z in redshifts]
+
     pars = camb.CAMBparams()
 
     pars.set_cosmology(
@@ -97,7 +124,7 @@ def make_camb_params(
     pars.set_dark_energy(dark_energy_model=dark_energy_model)
 
     pars.set_matter_power(
-        redshifts=[float(z) for z in redshifts],
+        redshifts=redshifts,
         kmax=float(kmax),
     )
 
@@ -106,6 +133,8 @@ def make_camb_params(
         try:
             pars.NonLinearModel.set_params(halofit_version=halofit_version)
         except Exception:
+            # Older/newer CAMB versions differ here slightly. The default
+            # non-linear model is still usable for standalone tests.
             pass
     else:
         pars.NonLinear = model.NonLinear_none
@@ -136,6 +165,65 @@ def make_camb_params(
     return pars
 
 
+def get_matter_power(
+    *,
+    redshift,
+    kmax=0.8,
+    npoints=500,
+    nonlinear=False,
+    feature_type="none",
+    A_feat=0.0,
+    log10omega_feat=1.0,
+    phi=0.0,
+    cosmology=None,
+    camb_options=None,
+):
+    """
+    Compute a CAMB matter power spectrum for one redshift.
+
+    Returns
+    -------
+    k : ndarray
+        Wavenumbers in h/Mpc, matching CAMB's get_matter_power_spectrum output.
+    pk : ndarray
+        Matter power spectrum in CAMB's corresponding units.
+    """
+    import camb
+
+    cosmology = dict(cosmology or {})
+    camb_options = dict(camb_options or {})
+
+    pars = make_camb_params(
+        redshifts=[float(redshift)],
+        kmax=float(kmax),
+        nonlinear=nonlinear,
+        feature_type=feature_type,
+        A_feat=A_feat,
+        log10omega_feat=log10omega_feat,
+        phi=phi,
+        **cosmology,
+        **camb_options,
+    )
+
+    results = camb.get_results(pars)
+
+    kh, z_out, pk = results.get_matter_power_spectrum(
+        minkh=1e-4,
+        maxkh=float(kmax),
+        npoints=int(npoints),
+    )
+
+    pk = np.asarray(pk, dtype=float)
+
+    if pk.ndim != 2 or pk.shape[0] != 1:
+        raise RuntimeError(
+            "Expected one-redshift CAMB output with shape (1, n_k), "
+            f"got shape {pk.shape}."
+        )
+
+    return np.asarray(kh, dtype=float), pk[0]
+
+
 def get_matter_power_redshifts(
     *,
     redshifts,
@@ -151,14 +239,29 @@ def get_matter_power_redshifts(
 ):
     """
     Compute CAMB matter power spectra for multiple redshifts in one CAMB call.
+
+    CAMB expects redshifts in decreasing order, i.e. earliest times first.
+    We sort them before passing to CAMB to avoid repeated CAMB re-sorting
+    messages, then match returned spectra back by redshift value downstream.
+
+    Returns
+    -------
+    result : dict
+        Dictionary with keys:
+            "k" : common k-grid
+            "z" : redshifts returned by CAMB
+            "pk" : array with shape (n_z, n_k)
     """
     import camb
+
+    redshifts = [float(z) for z in redshifts]
+    redshifts_for_camb = sorted(redshifts, reverse=True)
 
     cosmology = dict(cosmology or {})
     camb_options = dict(camb_options or {})
 
     pars = make_camb_params(
-        redshifts=[float(z) for z in redshifts],
+        redshifts=redshifts_for_camb,
         kmax=float(kmax),
         nonlinear=nonlinear,
         feature_type=feature_type,
@@ -200,10 +303,7 @@ def get_matter_power_redshifts(
 
 def _match_redshift_index(z_out, redshift, atol=1e-8):
     """
-    Return the row index in CAMB's output corresponding to a requested redshift.
-
-    CAMB may reorder redshifts internally, so never assume the output order
-    matches the input order.
+    Return the row index in a CAMB redshift output corresponding to redshift.
     """
     z_out = np.asarray(z_out, dtype=float)
     redshift = float(redshift)
@@ -219,19 +319,47 @@ def _match_redshift_index(z_out, redshift, atol=1e-8):
     return int(matches[0])
 
 
-def _spectra_cache_from_camb_result(result, redshifts, value_name):
+def get_wiggle_linear_spectra_redshifts(
+    *,
+    redshifts,
+    log10omega_feat,
+    A_feat=0.03,
+    phi=0.0,
+    feature_type="log",
+    kmax=0.8,
+    npoints=500,
+    cosmology=None,
+    camb_options=None,
+):
     """
-    Convert a multi-redshift CAMB result into a cache keyed by requested redshift.
+    Generate linear CAMB matter spectra with a primordial feature for multiple
+    redshifts in one CAMB call.
+
+    Returns a cache-like dictionary keyed by redshift.
     """
+    redshifts = [float(z) for z in redshifts]
+
+    result = get_matter_power_redshifts(
+        redshifts=redshifts,
+        kmax=kmax,
+        npoints=npoints,
+        nonlinear=False,
+        feature_type=feature_type,
+        A_feat=A_feat,
+        log10omega_feat=log10omega_feat,
+        phi=phi,
+        cosmology=cosmology,
+        camb_options=camb_options,
+    )
+
     cache = {}
 
     for redshift in redshifts:
-        redshift = float(redshift)
         idx = _match_redshift_index(result["z"], redshift)
 
-        cache[redshift] = {
+        cache[float(redshift)] = {
             "k": result["k"],
-            value_name: result["pk"][idx],
+            "p_wig_lin": result["pk"][idx],
         }
 
     return cache
@@ -246,9 +374,8 @@ def build_vanilla_spectra_cache(
     camb_options=None,
 ):
     """
-    Build vanilla linear and non-linear spectra for all redshifts.
-
-    This uses two CAMB calls total: one linear and one non-linear.
+    Build vanilla linear and non-linear spectra for all redshifts using only
+    two CAMB calls total.
     """
     redshifts = [float(z) for z in redshifts]
 
@@ -281,35 +408,74 @@ def build_vanilla_spectra_cache(
     if not np.allclose(lin["k"], nl["k"], rtol=0.0, atol=0.0):
         raise ValueError("Vanilla linear and non-linear CAMB k-grids differ.")
 
-    lin_cache = _spectra_cache_from_camb_result(
-        lin,
-        redshifts,
-        "p_van_lin",
-    )
-
-    nl_cache = _spectra_cache_from_camb_result(
-        nl,
-        redshifts,
-        "p_van_nl",
-    )
-
     cache = {}
 
     for redshift in redshifts:
-        redshift = float(redshift)
+        i_lin = _match_redshift_index(lin["z"], redshift)
+        i_nl = _match_redshift_index(nl["z"], redshift)
 
-        cache[redshift] = {
-            "k": lin_cache[redshift]["k"],
-            "p_van_lin": lin_cache[redshift]["p_van_lin"],
-            "p_van_nl": nl_cache[redshift]["p_van_nl"],
+        cache[float(redshift)] = {
+            "k": lin["k"],
+            "p_van_lin": lin["pk"][i_lin],
+            "p_van_nl": nl["pk"][i_nl],
         }
 
     return cache
 
 
-def get_wiggle_linear_spectra_redshifts(
+def get_vanilla_spectra(
     *,
-    redshifts,
+    redshift,
+    kmax=0.8,
+    npoints=500,
+    cosmology=None,
+    camb_options=None,
+):
+    """
+    Generate the vanilla linear and non-linear CAMB matter spectra for one redshift.
+
+    These spectra do not depend on feature parameters and can therefore be
+    cached across forecast-grid evaluations when cosmology is fixed.
+    """
+    k_van_lin, p_van_lin = get_matter_power(
+        redshift=redshift,
+        kmax=kmax,
+        npoints=npoints,
+        nonlinear=False,
+        feature_type="none",
+        A_feat=0.0,
+        log10omega_feat=1.0,
+        phi=0.0,
+        cosmology=cosmology,
+        camb_options=camb_options,
+    )
+
+    k_van_nl, p_van_nl = get_matter_power(
+        redshift=redshift,
+        kmax=kmax,
+        npoints=npoints,
+        nonlinear=True,
+        feature_type="none",
+        A_feat=0.0,
+        log10omega_feat=1.0,
+        phi=0.0,
+        cosmology=cosmology,
+        camb_options=camb_options,
+    )
+
+    if not np.allclose(k_van_lin, k_van_nl, rtol=0.0, atol=0.0):
+        raise ValueError("Vanilla linear and non-linear CAMB k-grids differ.")
+
+    return {
+        "k": k_van_lin,
+        "p_van_lin": p_van_lin,
+        "p_van_nl": p_van_nl,
+    }
+
+
+def get_wiggle_linear_spectrum(
+    *,
+    redshift,
     log10omega_feat,
     A_feat=0.03,
     phi=0.0,
@@ -320,14 +486,13 @@ def get_wiggle_linear_spectra_redshifts(
     camb_options=None,
 ):
     """
-    Generate linear CAMB spectra with a primordial feature for all redshifts.
+    Generate the linear CAMB matter spectrum with a primordial feature.
 
-    This uses one CAMB call total for the supplied redshift list.
+    This is the only CAMB spectrum that changes across feature-parameter
+    forecast-grid evaluations at fixed cosmology.
     """
-    redshifts = [float(z) for z in redshifts]
-
-    result = get_matter_power_redshifts(
-        redshifts=redshifts,
+    k_wig_lin, p_wig_lin = get_matter_power(
+        redshift=redshift,
         kmax=kmax,
         npoints=npoints,
         nonlinear=False,
@@ -339,11 +504,10 @@ def get_wiggle_linear_spectra_redshifts(
         camb_options=camb_options,
     )
 
-    return _spectra_cache_from_camb_result(
-        result,
-        redshifts,
-        "p_wig_lin",
-    )
+    return {
+        "k": k_wig_lin,
+        "p_wig_lin": p_wig_lin,
+    }
 
 
 def get_vanilla_and_wiggle_spectra(
@@ -359,23 +523,25 @@ def get_vanilla_and_wiggle_spectra(
     camb_options=None,
 ):
     """
-    Generate P_van_lin, P_van_nl, and P_wig_lin for one redshift.
+    Generate the three spectra needed by the emulator damping correction:
 
-    This is retained for standalone tests. Internally it uses the same
-    multi-redshift machinery as the forecast path.
+        P_van_lin(k, z)
+        P_van_nl(k, z)
+        P_wig_lin(k, z)
+
+    The feature spectrum is intentionally linear. The non-linear information
+    enters through P_van_nl and the emulator damping envelope.
     """
-    redshift = float(redshift)
-
-    vanilla_cache = build_vanilla_spectra_cache(
-        redshifts=[redshift],
+    vanilla = get_vanilla_spectra(
+        redshift=redshift,
         kmax=kmax,
         npoints=npoints,
         cosmology=cosmology,
         camb_options=camb_options,
     )
 
-    wiggle_cache = get_wiggle_linear_spectra_redshifts(
-        redshifts=[redshift],
+    wiggle = get_wiggle_linear_spectrum(
+        redshift=redshift,
         log10omega_feat=log10omega_feat,
         A_feat=A_feat,
         phi=phi,
@@ -385,9 +551,6 @@ def get_vanilla_and_wiggle_spectra(
         cosmology=cosmology,
         camb_options=camb_options,
     )
-
-    vanilla = vanilla_cache[redshift]
-    wiggle = wiggle_cache[redshift]
 
     if not np.allclose(vanilla["k"], wiggle["k"], rtol=0.0, atol=0.0):
         raise ValueError("Vanilla and wiggle CAMB k-grids differ.")

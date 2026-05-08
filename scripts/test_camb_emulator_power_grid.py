@@ -10,6 +10,22 @@ from wigglesgp.power import nonlinear_wiggle_power
 from wigglesgp.camb_power import get_vanilla_and_wiggle_spectra
 
 
+DEFAULTS = {
+    "log": {
+        "emulator": Path("emulators/log_sigma_gp.pkl"),
+        "omega_values": [0.8, 1.26, 2.0],
+        "output_dir": Path("forecast_tests/log_camb_emulator_grid"),
+        "summary": Path("forecast_tests/log_camb_emulator_grid_summary.csv"),
+    },
+    "linear": {
+        "emulator": Path("emulators/linear_sigma_gp.pkl"),
+        "omega_values": [0.4, 0.87, 1.2],
+        "output_dir": Path("forecast_tests/linear_camb_emulator_grid"),
+        "summary": Path("forecast_tests/linear_camb_emulator_grid_summary.csv"),
+    },
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
@@ -19,17 +35,17 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--emulator",
-        type=Path,
-        default=Path("emulators/log_sigma_gp.pkl"),
-        help="Path to saved Sigma emulator.",
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature template.",
     )
 
     parser.add_argument(
-        "--feature-type",
-        choices=["log", "linear"],
-        default="log",
-        help="Feature template.",
+        "--emulator",
+        type=Path,
+        default=None,
+        help="Path to saved Sigma emulator. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -41,11 +57,14 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--log10omega-values",
+        "--omega-values",
         type=float,
         nargs="+",
-        default=[0.8, 1.26, 2.0],
-        help="Feature frequency labels in the emulator convention.",
+        default=None,
+        help=(
+            "Feature frequency labels in the emulator convention. "
+            "Defaults from --feature-type."
+        ),
     )
 
     parser.add_argument(
@@ -93,15 +112,15 @@ def parse_args():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("forecast_tests/log_camb_emulator_grid"),
-        help="Directory for per-grid-point CSV outputs.",
+        default=None,
+        help="Directory for per-grid-point CSV outputs. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--summary",
         type=Path,
-        default=Path("forecast_tests/log_camb_emulator_grid_summary.csv"),
-        help="Path to summary CSV.",
+        default=None,
+        help="Path to summary CSV. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -111,6 +130,17 @@ def parse_args():
     )
 
     return parser.parse_args()
+
+
+def resolve_defaults(args):
+    defaults = DEFAULTS[args.feature_type]
+
+    emulator_path = args.emulator or defaults["emulator"]
+    omega_values = args.omega_values or defaults["omega_values"]
+    output_dir = args.output_dir or defaults["output_dir"]
+    summary = args.summary or defaults["summary"]
+
+    return emulator_path, omega_values, output_dir, summary
 
 
 def format_float_for_filename(value):
@@ -156,7 +186,7 @@ def run_one_grid_point(
     emulator,
     feature_type,
     z,
-    log10omega,
+    omega_label,
     A_feat,
     phi,
     kmax,
@@ -168,7 +198,7 @@ def run_one_grid_point(
 ):
     spectra = get_vanilla_and_wiggle_spectra(
         redshift=z,
-        log10omega_feat=log10omega,
+        log10omega_feat=omega_label,
         A_feat=A_feat,
         phi=phi,
         feature_type=feature_type,
@@ -195,7 +225,7 @@ def run_one_grid_point(
     p_wig_lin_fit = p_wig_lin[mask]
 
     z_grid = np.full_like(k_fit, float(z), dtype=float)
-    omega_grid = np.full_like(k_fit, float(log10omega), dtype=float)
+    omega_grid = np.full_like(k_fit, float(omega_label), dtype=float)
 
     damping, sigma = emulator.damping(
         k_fit,
@@ -230,10 +260,10 @@ def run_one_grid_point(
 
     write_output_csv(output_path, output_data)
 
-    summary = {
+    return {
         "z": float(z),
-        "log10omega": float(log10omega),
-        "omega": 10.0 ** float(log10omega),
+        "omega_label": float(omega_label),
+        "omega_model": 10.0 ** float(omega_label),
         "A_feat": float(A_feat),
         "phi": float(phi),
         "n_k": int(len(k_fit)),
@@ -252,8 +282,6 @@ def run_one_grid_point(
         "output": str(output_path),
     }
 
-    return summary
-
 
 def write_summary_csv(path, rows):
     path = Path(path)
@@ -261,8 +289,8 @@ def write_summary_csv(path, rows):
 
     columns = [
         "z",
-        "log10omega",
-        "omega",
+        "omega_label",
+        "omega_model",
         "A_feat",
         "phi",
         "n_k",
@@ -299,41 +327,46 @@ def main():
     args = parse_args()
     check_domain = not args.no_domain_check
 
-    emulator = SigmaEmulator.from_file(args.emulator)
+    emulator_path, omega_values, output_dir, summary_path = resolve_defaults(args)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    if not emulator_path.exists():
+        raise FileNotFoundError(f"Emulator file does not exist: {emulator_path}")
+
+    emulator = SigmaEmulator.from_file(emulator_path)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     print("\nCAMB + Sigma-emulator grid test")
     print("-------------------------------")
-    print(f"emulator:          {args.emulator}")
+    print(f"emulator:          {emulator_path}")
     print(f"feature_type:      {args.feature_type}")
     print(f"z_values:          {args.z_values}")
-    print(f"log10omega_values: {args.log10omega_values}")
+    print(f"omega_values:      {omega_values}")
     print(f"A_feat:            {args.A_feat}")
     print(f"phi:               {args.phi}")
-    print(f"output_dir:        {args.output_dir}")
-    print(f"summary:           {args.summary}")
+    print(f"output_dir:        {output_dir}")
+    print(f"summary:           {summary_path}")
 
     summary_rows = []
 
-    total = len(args.z_values) * len(args.log10omega_values)
+    total = len(args.z_values) * len(omega_values)
     counter = 0
 
     for z in args.z_values:
-        for log10omega in args.log10omega_values:
+        for omega_label in omega_values:
             counter += 1
 
             z_label = format_float_for_filename(z)
-            omega_label = format_float_for_filename(log10omega)
+            omega_file_label = format_float_for_filename(omega_label)
 
             output_path = (
-                args.output_dir
-                / f"{args.feature_type}_z{z_label}_w{omega_label}.csv"
+                output_dir
+                / f"{args.feature_type}_z{z_label}_w{omega_file_label}.csv"
             )
 
             print(
                 f"\n[{counter}/{total}] "
-                f"z={z:g}, log10omega={log10omega:g} "
+                f"z={z:g}, omega_label={omega_label:g} "
                 f"-> {output_path}"
             )
 
@@ -341,7 +374,7 @@ def main():
                 emulator=emulator,
                 feature_type=args.feature_type,
                 z=z,
-                log10omega=log10omega,
+                omega_label=omega_label,
                 A_feat=args.A_feat,
                 phi=args.phi,
                 kmax=args.kmax,
@@ -362,10 +395,10 @@ def main():
                 f"Rnl={row['ratio_nl_min']:.6g}/{row['ratio_nl_max']:.6g}"
             )
 
-    write_summary_csv(args.summary, summary_rows)
+    write_summary_csv(summary_path, summary_rows)
 
     print("\nDone.")
-    print(f"Wrote summary: {args.summary}")
+    print(f"Wrote summary: {summary_path}")
 
 
 if __name__ == "__main__":

@@ -175,6 +175,8 @@ def emulator_damped_power_from_spectra(
     k_fit_min=0.05,
     k_fit_max=0.6,
     check_domain=True,
+    h=0.67,
+    propagate_gp_uncertainty=True,
 ):
     """
     Apply the Sigma-emulator damping correction to already-generated CAMB spectra.
@@ -203,13 +205,23 @@ def emulator_damped_power_from_spectra(
     z_grid = np.full_like(k, float(redshift), dtype=float)
     omega_grid = np.full_like(k, float(log10omega), dtype=float)
 
-    damping, sigma = emulator.damping(
-        k,
-        z_grid,
-        omega_grid,
-        return_sigma=True,
-        check_domain=check_domain,
-    )
+    if propagate_gp_uncertainty:
+        sigma, sigma_std = emulator.predict_sigma(
+            z_grid,
+            omega_grid,
+            return_std=True,
+            check_domain=check_domain,
+        )
+        damping = np.exp(-0.5 * (h * k * sigma) ** 2)
+    else:    
+        damping, sigma = emulator.damping(
+            k,
+            z_grid,
+            omega_grid,
+            return_sigma=True,
+            check_domain=check_domain,
+        )
+        sigma_std = np.zeros_like(sigma, dtype=float)
 
     p_wig_nl = nonlinear_wiggle_power(
         p_van_lin=p_van_lin,
@@ -220,6 +232,16 @@ def emulator_damped_power_from_spectra(
 
     ratio_lin = p_wig_lin / p_van_lin
     ratio_nl = p_wig_nl / p_van_nl
+
+    ratio_gp_std = np.abs(
+       (ratio_nl - 1.0)
+       * (h * k) ** 2
+       * sigma
+       * damping
+       * sigma_std
+    )
+
+    power_gp_std = p_van_nl * ratio_gp_std
 
     return {
         "z": float(redshift),
@@ -235,6 +257,9 @@ def emulator_damped_power_from_spectra(
         "ratio_nl": ratio_nl,
         "damping": damping,
         "sigma": sigma,
+        "sigma_std": sigma_std,
+        "ratio_gp_std": ratio_gp_std,
+        "power_gp_std": power_gp_std,
     }
 
 def emulator_damped_camb_data_vector(
@@ -250,10 +275,12 @@ def emulator_damped_camb_data_vector(
     npoints=700,
     k_fit_min=0.05,
     k_fit_max=0.6,
+    h=0.67,
     check_domain=True,
     cosmology=None,
     camb_options=None,
     observable="ratio_nl",
+    propagate_gp_uncertainty=True,
 ):
     """
     Build a stacked forecast data vector using cached vanilla spectra and a
@@ -301,7 +328,9 @@ def emulator_damped_camb_data_vector(
             p_wig_lin=wiggle["p_wig_lin"],
             k_fit_min=k_fit_min,
             k_fit_max=k_fit_max,
+            h=h,
             check_domain=check_domain,
+            propagate_gp_uncertainty=propagate_gp_uncertainty,
         )
 
         blocks.append(block)
@@ -310,6 +339,14 @@ def emulator_damped_camb_data_vector(
         raise ValueError("observable must be either 'ratio_nl' or 'p_wig_nl'.")
 
     vector = np.concatenate([block[observable] for block in blocks])
+
+    if observable == "ratio_nl":
+        gp_std = np.concatenate([block["ratio_gp_std"] for block in blocks])
+    elif observable == "p_wig_nl":
+        gp_std = np.concatenate([block["power_gp_std"] for block in blocks])
+    else:
+        raise ValueError("observable must be either 'ratio_nl' or 'p_wig_nl'.")
+
     k = np.concatenate([block["k"] for block in blocks])
     z = np.concatenate(
         [np.full_like(block["k"], block["z"], dtype=float) for block in blocks]
@@ -321,6 +358,7 @@ def emulator_damped_camb_data_vector(
         "z": z,
         "blocks": blocks,
         "observable": observable,
+        "gp_std": gp_std,
     }
 
 
@@ -331,6 +369,72 @@ def diagonal_fractional_sigma(vector, frac_error, floor=1e-12):
     vector = np.asarray(vector, dtype=float)
     sigma = frac_error * np.abs(vector)
     return np.maximum(sigma, floor)
+
+
+
+def total_diagonal_sigma(
+    vector,
+    *,
+    observational_sigma=None,
+    frac_error=None,
+    gp_sigma=None,
+    model_error_floor=0.0,
+    floor=1e-12,
+):
+    """
+    Combine observational, GP/emulator, and semi-analytic model uncertainty.
+
+    Parameters
+    ----------
+    vector : array-like
+        Forecast data vector.
+    observational_sigma : array-like, optional
+        Direct observational standard deviation for each data-vector element.
+    frac_error : float, optional
+        Simple fractional observational error. Used only if
+        observational_sigma is None.
+    gp_sigma : array-like, optional
+        GP-propagated standard deviation on the same observable as `vector`.
+    model_error_floor : float, optional
+        Additive model-error floor. For ratio observables this should be an
+        absolute error on the ratio, e.g. 5e-3. For power-spectrum observables,
+        pass a power-spectrum error.
+    floor : float
+        Minimum standard deviation.
+
+    Returns
+    -------
+    sigma_total : ndarray
+        Total diagonal standard deviation.
+    """
+    vector = np.asarray(vector, dtype=float)
+
+    variance = np.zeros_like(vector, dtype=float)
+
+    if observational_sigma is not None:
+        obs = np.asarray(observational_sigma, dtype=float)
+        if obs.shape != vector.shape:
+            raise ValueError(
+                f"observational_sigma shape {obs.shape} does not match "
+                f"vector shape {vector.shape}."
+            )
+        variance += obs**2
+    elif frac_error is not None:
+        variance += diagonal_fractional_sigma(vector, frac_error, floor=0.0) ** 2
+
+    if gp_sigma is not None:
+        gp_sigma = np.asarray(gp_sigma, dtype=float)
+        if gp_sigma.shape != vector.shape:
+            raise ValueError(
+                f"gp_sigma shape {gp_sigma.shape} does not match "
+                f"vector shape {vector.shape}."
+            )
+        variance += gp_sigma**2
+
+    if model_error_floor is not None and model_error_floor > 0.0:
+        variance += float(model_error_floor) ** 2
+
+    return np.maximum(np.sqrt(variance), floor)
 
 
 def gaussian_loglike_diagonal(model, data, sigma):

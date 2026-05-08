@@ -8,6 +8,20 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 
+DEFAULTS = {
+    "log": {
+        "input_dir": Path("forecast_tests/log_camb_emulator_grid"),
+        "output": Path("forecast_tests/log_camb_emulator_grid_matrix.pdf"),
+        "omega_values": [0.8, 1.26, 2.0],
+    },
+    "linear": {
+        "input_dir": Path("forecast_tests/linear_camb_emulator_grid"),
+        "output": Path("forecast_tests/linear_camb_emulator_grid_matrix.pdf"),
+        "omega_values": [0.4, 0.87, 1.2],
+    },
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
@@ -18,23 +32,24 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--feature-type",
+        choices=["log", "linear"],
+        required=True,
+        help="Feature type prefix used in filenames.",
+    )
+
+    parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path("forecast_tests/log_camb_emulator_grid"),
-        help="Directory containing per-grid-point CSV files.",
+        default=None,
+        help="Directory containing per-grid-point CSV files. Defaults from --feature-type.",
     )
 
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("forecast_tests/log_camb_emulator_grid_matrix.pdf"),
-        help="Output plot path.",
-    )
-
-    parser.add_argument(
-        "--feature-type",
-        default="log",
-        help="Feature type prefix used in filenames.",
+        default=None,
+        help="Output plot path. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -46,11 +61,11 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--log10omega-values",
+        "--omega-values",
         type=float,
         nargs="+",
-        default=[0.8, 1.26, 2.0],
-        help="Frequency labels to plot, in column order.",
+        default=None,
+        help="Frequency labels to plot, in column order. Defaults from --feature-type.",
     )
 
     parser.add_argument(
@@ -64,11 +79,26 @@ def parse_args():
         "--figsize",
         type=float,
         nargs=2,
-        default=[13.0, 14.0],
+        default=None,
         help="Figure size as width height.",
     )
 
     return parser.parse_args()
+
+
+def resolve_defaults(args):
+    defaults = DEFAULTS[args.feature_type]
+
+    input_dir = args.input_dir or defaults["input_dir"]
+    output = args.output or defaults["output"]
+    omega_values = args.omega_values or defaults["omega_values"]
+
+    if args.figsize is None:
+        figsize = [13.0, 14.0]
+    else:
+        figsize = args.figsize
+
+    return input_dir, output, omega_values, figsize
 
 
 def format_float_for_filename(value):
@@ -113,10 +143,12 @@ def set_latex_style():
 
 def main():
     args = parse_args()
+    input_dir, output_path, omega_values, figsize = resolve_defaults(args)
+
     set_latex_style()
 
     z_values = [float(z) for z in args.z_values]
-    omega_values = [float(w) for w in args.log10omega_values]
+    omega_values = [float(w) for w in omega_values]
 
     n_z = len(z_values)
     n_w = len(omega_values)
@@ -124,7 +156,7 @@ def main():
     fig, axes = plt.subplots(
         n_z,
         n_w,
-        figsize=tuple(args.figsize),
+        figsize=tuple(figsize),
         sharex=True,
         sharey=True,
         squeeze=False,
@@ -139,7 +171,7 @@ def main():
             z_label = format_float_for_filename(z)
             omega_label = format_float_for_filename(omega)
 
-            path = args.input_dir / f"{args.feature_type}_z{z_label}_w{omega_label}.csv"
+            path = input_dir / f"{args.feature_type}_z{z_label}_w{omega_label}.csv"
 
             if not path.exists():
                 ax.set_axis_off()
@@ -151,7 +183,6 @@ def main():
             k = data["k"]
             ratio_lin = data["ratio_lin"]
             ratio_nl = data["ratio_nl_emulator"]
-            damping = data["damping"]
             sigma = data["sigma"]
 
             all_ratios.append(ratio_lin[np.isfinite(ratio_lin)])
@@ -160,7 +191,6 @@ def main():
             ax.plot(
                 k,
                 ratio_lin,
-                color="tab:blue",
                 linestyle="--",
                 linewidth=1.2,
                 label=r"$R_{\rm lin}$" if (i == 0 and j == 0) else None,
@@ -169,7 +199,6 @@ def main():
             ax.plot(
                 k,
                 ratio_nl,
-                color="tab:orange",
                 linestyle="-",
                 linewidth=1.3,
                 label=r"$R_{\rm emu}$" if (i == 0 and j == 0) else None,
@@ -194,7 +223,7 @@ def main():
 
             if i == 0:
                 ax.set_title(
-                    rf"$\log_{{10}}\omega={format_float_label(omega)}$",
+                    rf"$\omega_{{\rm label}}={format_float_label(omega)}$",
                     fontsize=16,
                     pad=8,
                 )
@@ -233,7 +262,6 @@ def main():
             ymin -= pad
             ymax += pad
 
-            # Keep the visual scale centred enough around unity.
             ymin = min(ymin, 0.965)
             ymax = max(ymax, 1.035)
 
@@ -262,11 +290,11 @@ def main():
         hspace=0.0,
     )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(args.output, dpi=args.dpi, bbox_inches="tight")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=args.dpi, bbox_inches="tight")
     plt.close(fig)
 
-    print(f"Wrote plot: {args.output}")
+    print(f"Wrote plot: {output_path}")
 
 
 if __name__ == "__main__":
