@@ -162,33 +162,33 @@ def parse_args():
         help="Forecast observable.",
     )
 
-    parser.add_argument(
-        "--nlive",
-        type=int,
-        default=250,
-        help="Number of live points for dynesty.",
-    )
+    # parser.add_argument(
+    #     "--nlive",
+    #     type=int,
+    #     default=250,
+    #     help="Number of live points for dynesty.",
+    # )
 
     parser.add_argument(
         "--dlogz",
         type=float,
         default=0.05,
-        help="Dynesty stopping criterion.",
+        help="BOBE convergence criterion.",
     )
 
-    parser.add_argument(
-        "--sample",
-        choices=["auto", "rwalk", "rslice", "slice"],
-        default="rwalk",
-        help="Dynesty sampling method.",
-    )
+    # parser.add_argument(
+    #     "--sample",
+    #     choices=["auto", "rwalk", "rslice", "slice"],
+    #     default="rwalk",
+    #     help="Dynesty sampling method.",
+    # )
 
-    parser.add_argument(
-        "--bound",
-        choices=["multi", "single", "balls", "cubes", "none"],
-        default="multi",
-        help="Dynesty bounding method.",
-    )
+    # parser.add_argument(
+    #     "--bound",
+    #     choices=["multi", "single", "balls", "cubes", "none"],
+    #     default="multi",
+    #     help="Dynesty bounding method.",
+    # )
 
     parser.add_argument(
         "--output",
@@ -327,7 +327,7 @@ def main():
     param_list = ["omega_label", "phi"]
 
     param_labels = [
-        r"\omega_{\rm label}",
+        r"\log_{10}(\omega)",
         r"\phi",
     ]
 
@@ -423,7 +423,7 @@ def main():
         num_hmc_warmup=512,
         num_hmc_samples=1024, 
         mc_points_size=512,
-        logz_threshold=0.001,
+        logz_threshold=args.dlogz,
         do_final_ns=True,
     )
     if results is not None:
