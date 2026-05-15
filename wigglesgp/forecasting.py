@@ -177,6 +177,8 @@ def emulator_damped_power_from_spectra(
     check_domain=True,
     h=0.67,
     propagate_gp_uncertainty=True,
+    apply_damping=True,
+    #force_zero_gp_uncertainty=False,
 ):
     """
     Apply the Sigma-emulator damping correction to already-generated CAMB spectra.
@@ -205,23 +207,28 @@ def emulator_damped_power_from_spectra(
     z_grid = np.full_like(k, float(redshift), dtype=float)
     omega_grid = np.full_like(k, float(log10omega), dtype=float)
 
-    if propagate_gp_uncertainty:
-        sigma, sigma_std = emulator.predict_sigma(
-            z_grid,
-            omega_grid,
-            return_std=True,
-            check_domain=check_domain,
-        )
-        damping = np.exp(-0.5 * (h * k * sigma) ** 2)
-    else:    
-        damping, sigma = emulator.damping(
-            k,
-            z_grid,
-            omega_grid,
-            return_sigma=True,
-            check_domain=check_domain,
-        )
-        sigma_std = np.zeros_like(sigma, dtype=float)
+    if apply_damping:
+        if propagate_gp_uncertainty:
+            sigma, sigma_std = emulator.predict_sigma(
+                z_grid,
+                omega_grid,
+                return_std=True,
+                check_domain=check_domain,
+            )
+            damping = np.exp(-0.5 * (h * k * sigma) ** 2)
+        else:    
+            damping, sigma = emulator.damping(
+                k,
+                z_grid,
+                omega_grid,
+                return_sigma=True,
+                check_domain=check_domain,
+            )
+            sigma_std = np.zeros_like(sigma, dtype=float)
+    else:
+        sigma = np.zeros_like(k, dtype=float)
+        sigma_std = np.zeros_like(k, dtype=float)
+        damping = np.ones_like(k, dtype=float)
 
     p_wig_nl = nonlinear_wiggle_power(
         p_van_lin=p_van_lin,
@@ -237,7 +244,7 @@ def emulator_damped_power_from_spectra(
        (ratio_nl - 1.0)
        * (h * k) ** 2
        * sigma
-       * damping
+       #* damping
        * sigma_std
     )
 
@@ -275,12 +282,14 @@ def emulator_damped_camb_data_vector(
     npoints=700,
     k_fit_min=0.05,
     k_fit_max=0.6,
+    k_fit_max_by_z=None,
     h=0.67,
     check_domain=True,
     cosmology=None,
     camb_options=None,
     observable="ratio_nl",
     propagate_gp_uncertainty=True,
+    apply_damping=True,
 ):
     """
     Build a stacked forecast data vector using cached vanilla spectra and a
@@ -315,6 +324,11 @@ def emulator_damped_camb_data_vector(
             raise ValueError(
                 f"Vanilla and wiggle CAMB k-grids differ at z={redshift}."
             )
+        
+        if k_fit_max_by_z is None:
+            k_fit_max_this_z = k_fit_max
+        else:
+            k_fit_max_this_z = float(k_fit_max_by_z.get(float(redshift), k_fit_max))
 
         block = emulator_damped_power_from_spectra(
             emulator=emulator,
@@ -327,10 +341,11 @@ def emulator_damped_camb_data_vector(
             p_van_nl=vanilla["p_van_nl"],
             p_wig_lin=wiggle["p_wig_lin"],
             k_fit_min=k_fit_min,
-            k_fit_max=k_fit_max,
+            k_fit_max=k_fit_max_this_z,
             h=h,
             check_domain=check_domain,
             propagate_gp_uncertainty=propagate_gp_uncertainty,
+            apply_damping=apply_damping,
         )
 
         blocks.append(block)

@@ -22,12 +22,12 @@ from wigglesgp.survey_forecast import (
 DEFAULTS = {
     "log": {
         "emulator": Path("emulators/log_sigma_gp.pkl"),
-        "fid_omega": 1.26,
+        "fid_omega": 1.1,
         "output": Path("forecast_tests/log_no_feature_comparison_euclid.csv"),
     },
     "linear": {
         "emulator": Path("emulators/linear_sigma_gp.pkl"),
-        "fid_omega": 0.87,
+        "fid_omega": 1.1,
         "output": Path("forecast_tests/linear_no_feature_comparison_euclid.csv"),
     },
 }
@@ -80,7 +80,7 @@ def parse_args():
     parser.add_argument(
         "--fid-phi",
         type=float,
-        default=np.pi,
+        default=0.35*2*np.pi,
         help="Fiducial phase in radians.",
     )
 

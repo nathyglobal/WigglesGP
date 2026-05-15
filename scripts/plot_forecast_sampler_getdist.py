@@ -8,13 +8,13 @@ import numpy as np
 
 DEFAULTS = {
     "log": {
-        "input": Path("forecast_tests/BOBE_log_forecast_sampler_euclid_2d.npz"),
-        "output": Path("forecast_tests/BOBE_log_forecast_sampler_getdist_euclid_2d.pdf"),
+        "input": Path("forecast_tests/BOBE_log_forecast_non_fiducial_sampler_euclid_2d.npz"),
+        "output": Path("forecast_tests/BOBE_log_forecast_non_fiducial_sampler_getdist_euclid_2d.pdf"),
         "title": "Log feature forecast, Euclid GCsp sampler",
     },
     "linear": {
-        "input": Path("forecast_tests/BOBE_linear_forecast_sampler_euclid_2d.npz"),
-        "output": Path("forecast_tests/BOBE_linear_forecast_sampler_getdist_euclid_2d.pdf"),
+        "input": Path("forecast_tests/BOBE_linear_forecast_non_fiducial_sampler_euclid_2d.npz"),
+        "output": Path("forecast_tests/BOBE_linear_forecast_non_fiducial_sampler_getdist_euclid_2d.pdf"),
         "title": "Linear feature forecast, Euclid GCsp sampler",
     },
 }

@@ -18,22 +18,85 @@ from wigglesgp.survey_forecast import (
     survey_sigma_for_forecast_vector,
     print_survey_summary,
 )
+def damping_threshold_kmax_by_z(
+        emulator,
+        redshifts,
+        omega_min,
+        omega_max,
+        amplitude=0.03,
+        epsilon0=5e-3,
+        h=0.67,
+        n_omega=256,
+        k_fit_max=0.6,
+        check_domain=True,
+):
+    """
+    Define a redshift-dependent linear-only cutoff from the calibrated damping emulator.
+
+    The cutoff is the largest k for which the maximum damping-induced change in the feature contribution reamins below epsilon0:
+
+        A * [1 - D(k, z, Sigma_max(z))] < epsilon0,
+    
+    with Sigma_max(z) taken over the validated omega range.
+    """
+
+    if epsilon0 <= 0:
+        raise ValueError("epsilon0 must be positive.")
+    
+    if amplitude <=0:
+        raise ValueError("amplitude must be positive.")
+    
+    if epsilon0 >= amplitude:
+        raise ValueError(
+            "epsilon0 must be smaller than amplitude for this cutoff definition."
+        )
+    
+    omega_grid = np.linspace(float(omega_min), float(omega_max), int(n_omega))
+    damping_min = 1.0 - float(epsilon0) / float(amplitude)
+
+    prefactor = np.sqrt(-2.0 * np.log(damping_min))
+
+    kmax_by_z = {}
+
+    for z in redshifts:
+        z_grid = np.full_like(omega_grid, float(z), dtype=float)
+
+        sigma_grid = emulator.predict_sigma(
+            z_grid,
+            omega_grid,
+            return_std = False,
+            check_domain=check_domain,
+        )
+
+        sigma_max = float(np.max(sigma_grid))
+        k_cut = prefactor / (float(h) * sigma_max)
+
+        kmax_by_z[float(z)] = min(float(k_cut), float(k_fit_max))
+
+    return kmax_by_z
+
+
+
+
+
 
 
 DEFAULTS = {
     "log": {
         "emulator": Path("emulators/log_sigma_gp.pkl"),
-        "fid_omega": 1.26,
-        "omega_min": 1.20,
-        "omega_max": 1.32,
-        "output": Path("forecast_tests/BOBE_log_forecast_sampler_euclid_2d.npz"),
+        "fid_omega": 1.26, # 1.1
+        "omega_min": 0.8,
+        "omega_max": 2.0,
+        #"linear_kmax_by_z": {1.0: 0.15, 1.2: 0.16, 1.4: 0.17, 1.65: 0.18},
+        "output": Path("forecast_tests/BOBE_log_forecast_fiducial_sampler_euclid_2d.npz"),
     },
     "linear": {
         "emulator": Path("emulators/linear_sigma_gp.pkl"),
-        "fid_omega": 0.87,
-        "omega_min": 0.75,
-        "omega_max": 0.99,
-        "output": Path("forecast_tests/BOBE_linear_forecast_sampler_euclid_2d.npz"),
+        "fid_omega": 0.87, #1.1, #
+        "omega_min": 0.4,
+        "omega_max": 1.2,
+        #"linear_kmax_by_z": {1.0: 0.15, 1.2: 0.16, 1.4: 0.17, 1.65: 0.18},
+        "output": Path("forecast_tests/BOBE_linear_forecast_fiducial_sampler_euclid_2d.npz"),
     },
 }
 
@@ -55,6 +118,18 @@ def parse_args():
         type=Path,
         default=None,
         help="Saved Sigma emulator. Defaults from --feature-type.",
+    )
+
+    parser.add_argument(
+        "--scenario",
+        choices=["full_damped", "full_undamped", "linear_only"],
+        default="full_damped",
+        help=(
+            "Forecast scenario: full_damped uses the full k-range with the GP"
+            "damping correction; full_undamped uses the full k-range with no "
+            "non-linear damping correction; linear_only uses a redshift-dependent "
+            "linear k cutoff."
+        ),
     )
 
     parser.add_argument(
@@ -82,7 +157,7 @@ def parse_args():
     parser.add_argument(
         "--fid-phi",
         type=float,
-        default=np.pi,
+        default=np.pi, #0.35*2*np.pi,
         help="Fiducial phase in radians.",
     )
 
@@ -214,6 +289,7 @@ def resolve_defaults(args):
         "fid_omega": args.fid_omega if args.fid_omega is not None else d["fid_omega"],
         "omega_min": args.omega_min if args.omega_min is not None else d["omega_min"],
         "omega_max": args.omega_max if args.omega_max is not None else d["omega_max"],
+        #"linear_kmax_by_z": d["linear_kmax_by_z"],
         "output": args.output or d["output"],
     }
 
@@ -236,17 +312,52 @@ def main():
 
     emulator = SigmaEmulator.from_file(emulator_path)
 
+    linear_kmax_by_z =  damping_threshold_kmax_by_z(
+        emulator=emulator,
+        redshifts=args.redshifts,
+        omega_min=omega_min,
+        omega_max=omega_max,
+        amplitude=args.fid_A_feat,
+        epsilon0=args.model_error_floor,
+        h=0.67,
+        k_fit_max=args.k_fit_max,
+        check_domain=check_domain,
+    )
+
+    if args.scenario == "full_damped":
+        apply_damping = True
+        k_fit_max_by_z = None
+        scenario_suffix = "full_damped"
+    
+    elif args.scenario == "full_undamped":
+        apply_damping = False
+        k_fit_max_by_z = None
+        scenario_suffix = "full_undamped"
+    
+    elif args.scenario == "linear_only":
+        apply_damping = True
+        k_fit_max_by_z = linear_kmax_by_z
+        scenario_suffix = "linear_only"
+    else:
+        raise ValueError(f"Unknown scenario: {args.scenario}")
+    
+    if args.output is None:
+        output = output.with_name(output.stem + f"_{scenario_suffix}" + output.suffix)
+
     print("\nForecast sampler")
     print("----------------")
     print(f"feature_type:      {args.feature_type}")
+    print(f"scenario:          {args.scenario}")
+    print(f"apply damping:     {apply_damping}")
     print(f"emulator:          {emulator_path}")
     print(f"redshifts:         {args.redshifts}")
+    print(f"k_fit_max_by_z:    {k_fit_max_by_z}")
     print(f"fid A_feat:        {args.fid_A_feat}")
     print(f"fid omega_label:   {fid_omega}")
     print(f"fid phi:           {args.fid_phi}")
     print(f"omega prior:       [{omega_min}, {omega_max}]")
     print(f"phi prior:         [{args.phi_min}, {args.phi_max}]")
-    print(f"nlive:             {args.nlive}")
+    #print(f"nlive:             {args.nlive}")
     print(f"dlogz:             {args.dlogz}")
     print(f"output:            {output}")
 
@@ -273,9 +384,11 @@ def main():
         npoints=args.npoints,
         k_fit_min=args.k_fit_min,
         k_fit_max=args.k_fit_max,
+        k_fit_max_by_z=k_fit_max_by_z,
         check_domain=check_domain,
         observable=args.observable,
         propagate_gp_uncertainty=args.include_gp_uncertainty,
+        apply_damping=apply_damping,
     )
 
     data = fid["vector"]
@@ -356,9 +469,11 @@ def main():
             npoints=args.npoints,
             k_fit_min=args.k_fit_min,
             k_fit_max=args.k_fit_max,
+            k_fit_max_by_z=k_fit_max_by_z,
             check_domain=check_domain,
             observable=args.observable,
             propagate_gp_uncertainty=False,
+            apply_damping=apply_damping,
         )
 
         ll, chi2 = gaussian_loglike_diagonal(
@@ -392,7 +507,7 @@ def main():
 
     from BOBE import BOBE
 
-    likelihood_name = f"forecast_{args.feature_type}_euclid_2d"
+    likelihood_name = f"forecast_{args.feature_type}_euclid_2d_{args.scenario}"
     bobe = BOBE(
             loglikelihood=loglike,
             param_list=param_list,
@@ -415,8 +530,8 @@ def main():
     results = bobe.run(
         acq='wipstd',
         min_evals=1, 
-        max_evals=250,
-        max_gp_size=250,
+        max_evals=500,
+        max_gp_size=500,
         fit_n_points=2, 
         ns_n_points=2,
         batch_size=2,
@@ -456,6 +571,12 @@ def main():
             redshifts=np.asarray(args.redshifts, dtype=float),
             model_error_floor=args.model_error_floor,
             include_gp_uncertainty=args.include_gp_uncertainty,
+            scenario=args.scenario,
+            apply_damping=apply_damping,
+            linear_kmax_by_z=np.array(
+                sorted(k_fit_max_by_z.items()) if k_fit_max_by_z is not None else [],
+                dtype=float,
+            ),
         )
 
     print("\nDone.")
