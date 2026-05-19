@@ -1,86 +1,106 @@
+from __future__ import annotations
+
 import numpy as np
 
 
+FeatureType = str
 
-def damped_log_wiggle_ratio(
+
+def feature_delta(
     k,
-    omega,
-    phase,
-    sigma,
-    amplitude=0.03, 
-    k_pivot=0.05, 
+    log10omega,
+    phi,
+    *,
+    feature_type: FeatureType,
+    amplitude=0.03,
+    k_pivot=0.05,
     h=0.67,
-        
 ):
     """
-    Semi-analytic damped logarithmic feature ratio.
-
-    Parameters
-    ----------
-    k : array-like
-        Wavenumbers in h/Mpc simulation units before multiplication by h
-    omega : float
-        Logarithmic feature frequency.
-    phase : float
-        Feature phase in radians.
-    sigma : float
-        Non-linear damping scale.
-    amplitude : float, optional
-        Feature amplitude (default: 0.03).
-    k_pivot : float, optional
-        Pivot scale (default: 0.05 h/Mpc).
-    h : float, optional
-        Reduced Hubble parameter used to convert k consistently with the simulation convention (default: 0.67).
+    Analytic linear fractional feature contribution.
 
     Returns
-    -------
-    ratio : ndarray
-        Damped relative matter power spectrum ratio, 1 + delta(k).
+        delta_lin(k) = A cos[omega f(k) + phi]
+
+    where omega = 10**log10omega. For logarithmic oscillations,
+    f(k)=ln(k/k_pivot). For linear oscillations, f(k)=k/k_pivot.
+    The input k is in h/Mpc and k_pivot is in Mpc^-1, so h*k is used in
+    the argument.
     """
     k = np.asarray(k, dtype=float)
-    damping = np.exp(-0.5 * (h * k * sigma) **2)
-    wiggle = np.cos(omega * np.log(h * k  / k_pivot) + phase)
-    return 1.0 + amplitude * wiggle * damping
+    omega = 10.0 ** np.asarray(log10omega, dtype=float)
+    k_mpc = h * k
 
-
-def damped_linear_wiggle_ratio( 
-    k,
-    omega,
-    phase,
-    sigma,
-    amplitude=0.03, 
-    k_pivot=0.05, 
-    h=0.67,
-):
-    """
-    Semi-analytic damped linear frequency feature ratio.
-
-    Parameters are the same as 'damped_log_wiggle_ratio', 
-    expect that the oscillatory phase is linear in k rather than log(k)
-    """
-    k = np.asarray(k, dtype=float)
-    damping = np.exp(-0.5 * (h * k * sigma) **2)
-    wiggle = np.cos(omega * h * k  / k_pivot + phase)
-    return 1.0 + amplitude * wiggle * damping
-
-
-def damped_wiggle_ratio(
-    k,
-    omega,
-    phase,
-    sigma,
-    feature_type=None,  # "log" or "linear"; if None, raises ValueError
-    amplitude=0.03, 
-    k_pivot=0.05, 
-    h=0.67,
-):
-    """
-    Dispatch to the logarithmic or linear damped feature model.
-    """
+    if np.any(k_mpc <= 0.0):
+        raise ValueError("All k values must be positive for feature templates.")
 
     if feature_type == "log":
-        return damped_log_wiggle_ratio(k, omega, phase, sigma, amplitude, k_pivot, h)
+        argument = omega * np.log(k_mpc / float(k_pivot)) + phi
     elif feature_type == "linear":
-        return damped_linear_wiggle_ratio(k, omega, phase, sigma, amplitude, k_pivot, h)
+        argument = omega * (k_mpc / float(k_pivot)) + phi
     else:
-        raise ValueError(f"Invalid feature_type: {feature_type}. Must be 'log' or 'linear'.")
+        raise ValueError("feature_type must be either 'log' or 'linear'.")
+
+    return float(amplitude) * np.cos(argument)
+
+
+def gaussian_damping(k, sigma, *, h=0.67):
+    """
+    Gaussian damping envelope D(k,Sigma)=exp[-(h k Sigma)^2/2].
+
+    k is in h/Mpc and Sigma is in Mpc, following the calibration convention.
+    """
+    k = np.asarray(k, dtype=float)
+    sigma = np.asarray(sigma, dtype=float)
+    return np.exp(-0.5 * (float(h) * k * sigma) ** 2)
+
+
+def damped_feature_delta(
+    k,
+    log10omega,
+    phi,
+    sigma,
+    *,
+    feature_type: FeatureType,
+    amplitude=0.03,
+    k_pivot=0.05,
+    h=0.67,
+):
+    """
+    Damped fractional feature contribution  delta_lin(k) * D(k,Sigma).
+    """
+    return gaussian_damping(k, sigma, h=h) * feature_delta(
+        k,
+        log10omega,
+        phi,
+        feature_type=feature_type,
+        amplitude=amplitude,
+        k_pivot=k_pivot,
+        h=h,
+    )
+
+
+def feature_ratio(
+    k,
+    log10omega,
+    phi,
+    sigma=0.0,
+    *,
+    feature_type: FeatureType,
+    amplitude=0.03,
+    k_pivot=0.05,
+    h=0.67,
+):
+    """
+    Multiplicative feature ratio 1 + delta_lin(k) * D(k,Sigma).
+    """
+    return 1.0 + damped_feature_delta(
+        k,
+        log10omega,
+        phi,
+        sigma,
+        feature_type=feature_type,
+        amplitude=amplitude,
+        k_pivot=k_pivot,
+        h=h,
+    )
